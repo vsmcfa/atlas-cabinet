@@ -62,6 +62,7 @@ function ouvrir(session){
   $('gate').style.display = 'none';
   $('entete').style.display = 'block';
   $('console').style.display = 'block';
+  $('liensBtn').style.display = '';
   $('expire').textContent = 'Session jusqu’à ' +
     new Date(session.expire_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   charger();
@@ -72,6 +73,9 @@ function deconnecter(motif){
   etat.jeton = null;
   etat.jetonLead = null;
   $('exportBtn').style.display = '';
+  $('liensBtn').style.display = '';
+  $('liens').style.display = 'none';
+  $('liensBtn').textContent = 'Liens';
   $('logoutBtn').textContent = 'Déconnexion';
   $('logoutBtn').className = 'lien-discret';
   fermerPanneau();
@@ -388,6 +392,7 @@ if(jetonMail){
       $('entete').style.display = 'block';
       $('expire').textContent = 'Réponse ouverte depuis votre e-mail';
       $('exportBtn').style.display = 'none';
+      $('liensBtn').style.display = 'none';
       $('logoutBtn').textContent = 'Voir toutes les réponses';
       $('logoutBtn').className = 'btn ghost';
       detail(d.lead);
@@ -400,6 +405,61 @@ if(jetonMail){
       $('loginError').style.display = 'block';
     });
 }
+
+/* ------------------------------------------------------ page des liens */
+
+/* Réservée à une vraie session : un jeton de mail n'ouvre qu'une fiche et ne
+   doit pas donner les accès techniques. Le bouton reste donc caché dans ce cas. */
+function basculerLiens(){
+  var ouverte = $('liens').style.display === 'block';
+  $('liens').style.display = ouverte ? 'none' : 'block';
+  $('console').style.display = ouverte ? 'block' : 'none';
+  $('liensBtn').textContent = ouverte ? 'Liens' : 'Retour aux réponses';
+  window.scrollTo(0, 0);
+}
+$('liensBtn').addEventListener('click', basculerLiens);
+
+function copier(texte, bouton){
+  var fini = function(){
+    var avant = bouton.textContent;
+    bouton.textContent = 'Copié';
+    bouton.classList.add('fait');
+    setTimeout(function(){ bouton.textContent = avant; bouton.classList.remove('fait'); }, 1600);
+  };
+  // navigator.clipboard exige HTTPS ; on garde un repli pour http://localhost
+  // et les navigateurs anciens.
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(texte).then(fini, function(){ replique(texte, fini); });
+  } else {
+    replique(texte, fini);
+  }
+}
+function replique(texte, fini){
+  var z = document.createElement('textarea');
+  z.value = texte;
+  z.style.position = 'fixed'; z.style.opacity = '0';
+  document.body.appendChild(z);
+  z.select();
+  try { document.execCommand('copy'); fini(); } catch(_){ window.prompt('Copiez ce lien :', texte); }
+  document.body.removeChild(z);
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('[data-copier]'), function(b){
+  b.addEventListener('click', function(){ copier(b.getAttribute('data-copier'), b); });
+});
+
+/* Générateur du lien commercial : c'est le geste le plus fréquent. */
+var BASE_FORMULAIRE = 'https://cabinet-atlas-link.netlify.app';
+function lienCommercial(){
+  var c = $('genCommercial').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  return c ? BASE_FORMULAIRE + '/?c=' + encodeURIComponent(c) : BASE_FORMULAIRE;
+}
+function rafraichirApercu(){
+  $('genApercu').textContent = lienCommercial();
+}
+$('genCommercial').addEventListener('input', rafraichirApercu);
+$('genCopier').addEventListener('click', function(){ copier(lienCommercial(), $('genCopier')); });
+rafraichirApercu();
 
 /* --------------------------------------------- reprise de session ouverte */
 

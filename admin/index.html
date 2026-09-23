@@ -95,6 +95,25 @@
   .box.no{background:var(--red-tint);color:var(--red);font-weight:600;}
   .box.warn{background:var(--amber-tint);color:var(--amber);}
 
+  /* ---------------------------------------------------- page des liens */
+  #liens{display:none;padding-bottom:40px;}
+  .bloc{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:22px 22px 8px;margin-bottom:16px;}
+  .bloc > h2{font-family:'Poppins',sans-serif;font-size:15px;color:var(--navy);margin-bottom:3px;}
+  .bloc > .quoi{font-size:13px;color:var(--grey);margin-bottom:16px;}
+  .lien{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);flex-wrap:wrap;}
+  .lien .nom{font-size:13.5px;font-weight:600;color:var(--ink);min-width:190px;}
+  .lien .url{font-size:12.5px;color:var(--grey);word-break:break-all;flex:1;min-width:200px;}
+  .lien .url a{color:var(--blue);}
+  .copier{background:var(--bg);border:1px solid var(--line);border-radius:100px;padding:6px 14px;
+      font-family:inherit;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;white-space:nowrap;}
+  .copier:hover{background:var(--blue-tint);border-color:var(--blue);}
+  .copier.fait{background:var(--green-tint);border-color:var(--green);color:var(--green);}
+  .avert{border-top:1px solid var(--line);padding:12px 0 14px;font-size:12.5px;
+      color:var(--grey);line-height:1.6;margin:0;}
+  .gen{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  .gen input{flex:1;min-width:150px;padding:10px 13px;border:1px solid var(--line);border-radius:10px;
+      font-family:inherit;font-size:14px;background:var(--bg);}
+
   /* ------------------------------------------------ fiche imprimable */
   /* Pas de bibliothèque PDF : le navigateur sait produire un PDF propre à
      partir d'une feuille d'impression, avec de vraies polices vectorielles
@@ -152,6 +171,7 @@
     <div class="logo">ATLAS<span>.</span> <span style="font-family:Inter;font-size:13px;font-weight:500;color:#A9BEE4">Réponses</span></div>
     <div style="display:flex;gap:9px;align-items:center">
       <span class="who" id="expire"></span>
+      <button class="btn ghost" id="liensBtn">Liens</button>
       <button class="btn ghost" id="exportBtn">Export CSV</button>
       <button class="lien-discret" id="logoutBtn">Déconnexion</button>
     </div>
@@ -182,6 +202,80 @@
     </div>
   </div>
 </main>
+
+<section id="liens">
+  <div class="wrap">
+
+    <div class="bloc">
+      <h2>Formulaire</h2>
+      <div class="gen">
+        <input type="text" id="genCommercial" placeholder="Commercial — ex. DUPONT" autocomplete="off">
+        <button class="copier" id="genCopier">Copier le lien</button>
+      </div>
+      <p class="quoi" id="genApercu" style="margin:0 0 14px"></p>
+      <div class="lien">
+        <span class="nom">Sans commercial</span>
+        <span class="url"><a href="https://cabinet-atlas-link.netlify.app" target="_blank" rel="noopener">cabinet-atlas-link.netlify.app</a></span>
+        <button class="copier" data-copier="https://cabinet-atlas-link.netlify.app">Copier</button>
+      </div>
+    </div>
+
+    <div class="bloc">
+      <h2>Démonstrations</h2>
+      <div class="lien">
+        <span class="nom">Tableau de bord</span>
+        <span class="url"><a href="https://cabinet-atlas-link.netlify.app/tableau-de-bord/" target="_blank" rel="noopener">…/tableau-de-bord/</a></span>
+        <button class="copier" data-copier="https://cabinet-atlas-link.netlify.app/tableau-de-bord/">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Audit juridique</span>
+        <span class="url"><a href="https://cabinet-atlas-link.netlify.app/audit-juridique/" target="_blank" rel="noopener">…/audit-juridique/</a></span>
+        <button class="copier" data-copier="https://cabinet-atlas-link.netlify.app/audit-juridique/">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Optimisation IK</span>
+        <span class="url"><a href="https://cabinet-atlas-link.netlify.app/optimisation-ik-karim/" target="_blank" rel="noopener">…/optimisation-ik-karim/</a></span>
+        <button class="copier" data-copier="https://cabinet-atlas-link.netlify.app/optimisation-ik-karim/">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Simulateur CFA</span>
+        <span class="url"><a href="https://cabinet-atlas-link.netlify.app/simulateur-cfa-adultes/" target="_blank" rel="noopener">…/simulateur-cfa-adultes/</a></span>
+        <button class="copier" data-copier="https://cabinet-atlas-link.netlify.app/simulateur-cfa-adultes/">Copier</button>
+      </div>
+      <p class="avert">Le simulateur n'enregistre les dossiers que dans le navigateur de l'appareil utilisé. Rien n'est transmis, malgré son écran « Dossier transmis ».</p>
+    </div>
+
+    <div class="bloc">
+      <h2>Accès techniques</h2>
+      <div class="lien">
+        <span class="nom">Cette console</span>
+        <span class="url"><a href="https://atlasinterface.netlify.app" target="_blank" rel="noopener">atlasinterface.netlify.app</a></span>
+        <button class="copier" data-copier="https://atlasinterface.netlify.app">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Base de données</span>
+        <span class="url"><a href="https://supabase.com/dashboard/project/lioymgigpojlqzrggkff" target="_blank" rel="noopener">Supabase — Atlas Cabinet</a></span>
+        <button class="copier" data-copier="https://supabase.com/dashboard/project/lioymgigpojlqzrggkff">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">E-mails</span>
+        <span class="url"><a href="https://app.brevo.com" target="_blank" rel="noopener">Brevo</a></span>
+        <button class="copier" data-copier="https://app.brevo.com">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Code source</span>
+        <span class="url"><a href="https://github.com/vsmcfa/atlas-cabinet" target="_blank" rel="noopener">github.com/vsmcfa/atlas-cabinet</a></span>
+        <button class="copier" data-copier="https://github.com/vsmcfa/atlas-cabinet">Copier</button>
+      </div>
+      <div class="lien">
+        <span class="nom">Hébergement</span>
+        <span class="url"><a href="https://app.netlify.com" target="_blank" rel="noopener">Netlify</a></span>
+        <button class="copier" data-copier="https://app.netlify.com">Copier</button>
+      </div>
+    </div>
+
+  </div>
+</section>
 
 <div class="overlay" id="overlay"></div>
 <aside class="panel" id="panel" aria-live="polite"></aside>
