@@ -1,0 +1,7 @@
+# Lu par Netlify DEPUIS LE DOSSIER PUBLIÉ. Un netlify.toml posé ici ne serait
+# pas interprété lors d'un déploiement par la CLI : il serait servi tel quel.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow

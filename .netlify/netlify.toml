@@ -1,5 +1,4 @@
 plugins = []
-headers = []
 redirects = []
 
 [functions]
@@ -23,3 +22,12 @@ publishOrigin = "default"
 [build.processing.js]
 
 [build.services]
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "no-referrer"
+X-Robots-Tag = "noindex, nofollow"

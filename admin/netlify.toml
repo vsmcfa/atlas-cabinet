@@ -1,8 +1,0 @@
-# Ce dossier est publié tel quel par `netlify deploy --dir`.
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "no-referrer"
-    X-Robots-Tag = "noindex, nofollow"
