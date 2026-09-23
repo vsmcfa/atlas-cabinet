@@ -213,7 +213,7 @@ async function exporterCsv(req: Request): Promise<Response> {
 
   const colonnes = [
     "Référence", "Date", "Garage", "Dirigeant", "Téléphone", "E-mail", "Salariés",
-    "Centres d'intérêt", "Bilan", "Taille (Mo)", "Commercial", "Statut mail",
+    "Centres d'intérêt", "Bilan", "Commercial", "Statut mail",
   ];
   const lignes = (data ?? []).map((l) => [
     l.reference,
@@ -221,7 +221,6 @@ async function exporterCsv(req: Request): Promise<Response> {
     l.garage, l.dirigeant, l.telephone, l.email, l.salaries,
     (l.interets ?? []).join(" | "),
     l.bilan_fourni ? (l.bilan_nom_origine ?? "oui") : "AUCUN BILAN",
-    l.bilan_taille ? (l.bilan_taille / 1048576).toFixed(1).replace(".", ",") : "",
     l.commercial ?? "", l.mail_statut,
   ].map(cellule).join(";"));
 

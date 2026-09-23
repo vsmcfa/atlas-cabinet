@@ -11,7 +11,8 @@ import {
 } from "../_partage/commun.ts";
 import { envoyerNotification, type Lead } from "../_partage/mail.ts";
 
-const TAILLE_MAX = 20 * 1024 * 1024;   // §6 du brief
+const TAILLE_MAX = 50 * 1024 * 1024;   // §6 du brief, relevé : les images sont
+                                       // compressées côté navigateur, les PDF non.
 const REMPLISSAGE_MIN_MS = 3000;       // §6 : rejet sous 3 secondes
 const MAX_UPLOADS_10MIN = 20;
 const MAX_ENVOIS_10MIN = 8;

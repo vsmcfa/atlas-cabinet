@@ -36,6 +36,12 @@
   .btn.ghost{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.35);padding:8px 14px;font-size:13px;}
   .btn.ghost:hover{background:rgba(255,255,255,.1);}
   .btn.small{padding:8px 15px;font-size:13px;}
+  /* La déconnexion n'est pas une action qu'on cherche : elle ne doit pas
+     rivaliser visuellement avec l'export, qui, lui, est utile au quotidien. */
+  .lien-discret{background:none;border:none;font-family:inherit;font-size:12.5px;
+      color:#A9BEE4;cursor:pointer;padding:6px 2px;text-decoration:underline;
+      text-underline-offset:3px;}
+  .lien-discret:hover{color:var(--white);}
 
   /* ---------------------------------------------------------- connexion */
   .gate{max-width:380px;margin:12vh auto;padding:0 20px;}
@@ -89,6 +95,35 @@
   .box.no{background:var(--red-tint);color:var(--red);font-weight:600;}
   .box.warn{background:var(--amber-tint);color:var(--amber);}
 
+  /* ------------------------------------------------ fiche imprimable */
+  /* Pas de bibliothèque PDF : le navigateur sait produire un PDF propre à
+     partir d'une feuille d'impression, avec de vraies polices vectorielles
+     et un texte sélectionnable. Une image générée en JavaScript ferait moins
+     bien, et pèserait 300 Ko de dépendance. */
+  #fiche{display:none;}
+  @media print{
+    @page{size:A4;margin:16mm 14mm;}
+    body{background:#fff;}
+    body > *:not(#fiche){display:none !important;}
+    #fiche{display:block;}
+  }
+  #fiche .f-tete{display:flex;justify-content:space-between;align-items:baseline;
+      border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:22px;}
+  #fiche .f-logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;color:var(--navy);}
+  #fiche .f-logo span{color:var(--blue);}
+  #fiche .f-marque{font-size:11px;color:var(--grey);}
+  #fiche h1{font-family:'Poppins',sans-serif;font-size:22px;color:var(--navy);margin-bottom:3px;}
+  #fiche .f-sous{font-size:12px;color:var(--grey);margin-bottom:24px;}
+  #fiche h2{font-family:'Poppins',sans-serif;font-size:12px;letter-spacing:.6px;text-transform:uppercase;
+      color:var(--blue);margin:22px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+  #fiche dl{display:grid;grid-template-columns:130px 1fr;gap:9px 16px;font-size:13px;}
+  #fiche dt{color:var(--grey);}
+  #fiche dd{color:var(--ink);font-weight:600;}
+  #fiche ul{margin:0;padding-left:17px;font-size:13px;line-height:1.85;}
+  #fiche .f-bilan{font-size:13px;font-weight:600;}
+  #fiche .f-pied{margin-top:30px;padding-top:9px;border-top:1px solid var(--line);
+      font-size:10.5px;color:var(--grey);line-height:1.6;}
+
   @media (max-width:760px){
     th.opt, td.opt{display:none;}
     .kv{grid-template-columns:86px 1fr;}
@@ -118,7 +153,7 @@
     <div style="display:flex;gap:9px;align-items:center">
       <span class="who" id="expire"></span>
       <button class="btn ghost" id="exportBtn">Export CSV</button>
-      <button class="btn ghost" id="logoutBtn">Fermer</button>
+      <button class="lien-discret" id="logoutBtn">Déconnexion</button>
     </div>
   </div>
 </header>
@@ -150,6 +185,9 @@
 
 <div class="overlay" id="overlay"></div>
 <aside class="panel" id="panel" aria-live="polite"></aside>
+
+<!-- Remplie à la volée avant impression ; invisible à l'écran. -->
+<article id="fiche" aria-hidden="true"></article>
 
 <script src="app.js"></script>
 </body>

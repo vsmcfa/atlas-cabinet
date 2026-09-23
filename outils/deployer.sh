@@ -9,6 +9,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Deno sert à la vérification des types ; il s'installe dans ~/.deno et n'est
+# pas forcément sur le PATH d'un shell non interactif.
+export PATH="$HOME/.deno/bin:$PATH"
+
 PROJET=lioymgigpojlqzrggkff
 SITE_FORMULAIRE=2db7e637-beeb-4cd5-90e0-e36631c64d02   # cabinet-atlas-link
 SITE_ADMIN=3462a6e2-7027-4ad3-9ff1-2c47a69031fc        # atlasinterface

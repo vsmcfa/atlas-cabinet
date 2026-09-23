@@ -72,7 +72,8 @@ function deconnecter(motif){
   etat.jeton = null;
   etat.jetonLead = null;
   $('exportBtn').style.display = '';
-  $('logoutBtn').textContent = 'Fermer';
+  $('logoutBtn').textContent = 'Déconnexion';
+  $('logoutBtn').className = 'lien-discret';
   fermerPanneau();
   $('entete').style.display = 'none';
   $('console').style.display = 'none';
@@ -90,7 +91,6 @@ function dateCourte(iso){
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
     ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
-function mo(octets){ return (octets / 1048576).toFixed(1).replace('.', ',') + ' Mo'; }
 
 /* Tout texte venant de la base est inséré par textContent, jamais par
    innerHTML : un nom de garage contenant du HTML ne doit rien pouvoir faire. */
@@ -147,7 +147,7 @@ function dessiner(d){
     tr.appendChild(cell(l.garage));
     tr.appendChild(cell(l.dirigeant, 'opt'));
     tr.appendChild(cell(l.telephone, 'opt nowrap'));
-    tr.appendChild(l.bilan_fourni ? tag('✓ ' + mo(l.bilan_taille || 0), 'ok') : tag('aucun', 'no'));
+    tr.appendChild(l.bilan_fourni ? tag('joint', 'ok') : tag('aucun', 'no'));
     tr.appendChild(cell(l.commercial || '—', 'opt muted'));
     tr.appendChild(
       l.mail_statut === 'envoye' ? tag('parti', 'ok')
@@ -211,7 +211,7 @@ function detail(l){
   if(l.bilan_fourni){
     var box = document.createElement('div'); box.className = 'box ok';
     var nom = document.createElement('div');
-    nom.textContent = (l.bilan_nom_origine || 'bilan') + ' — ' + mo(l.bilan_taille || 0);
+    nom.textContent = l.bilan_nom_origine || 'bilan';
     box.appendChild(nom);
     var dl2 = document.createElement('button');
     dl2.className = 'btn small'; dl2.textContent = 'Télécharger';
@@ -240,8 +240,76 @@ function detail(l){
     p.appendChild(w);
   }
 
+  var pdf = document.createElement('button');
+  pdf.className = 'btn small';
+  pdf.textContent = 'Fiche PDF';
+  pdf.style.marginTop = '22px';
+  pdf.addEventListener('click', function(){ imprimer(l); });
+  p.appendChild(pdf);
+
   $('overlay').style.display = 'block';
   p.style.display = 'block';
+}
+
+/* ---------------------------------------------------------- fiche PDF */
+
+/* Pas de bibliothèque : on remplit une fiche cachée, mise en page par la
+   feuille d'impression, et on laisse le navigateur produire le PDF. Le texte
+   reste vectoriel et sélectionnable, et il n'y a rien à maintenir. */
+function imprimer(l){
+  var f = $('fiche');
+  f.textContent = '';
+
+  var ajout = function(parent, balise, texte, classe){
+    var e = document.createElement(balise);
+    if(classe) e.className = classe;
+    if(texte != null) e.textContent = texte;
+    parent.appendChild(e);
+    return e;
+  };
+
+  var tete = ajout(f, 'div', null, 'f-tete');
+  var logo = ajout(tete, 'div', null, 'f-logo');
+  logo.appendChild(document.createTextNode('ATLAS'));
+  ajout(logo, 'span', '.');
+  ajout(tete, 'div', 'ATLAS × Etchecom — Comptabilité réservée aux garagistes', 'f-marque');
+
+  ajout(f, 'h1', l.garage);
+  ajout(f, 'div', 'Référence ' + l.reference + ' · réponse reçue le ' + dateLongue(l.created_at), 'f-sous');
+
+  ajout(f, 'h2', 'Contact');
+  var dl = document.createElement('dl');
+  var paire = function(cle, valeur){
+    ajout(dl, 'dt', cle);
+    ajout(dl, 'dd', valeur || '—');
+  };
+  paire('Dirigeant', l.dirigeant);
+  paire('Téléphone', l.telephone);
+  paire('E-mail', l.email);
+  paire('Nombre de salariés', String(l.salaries));
+  paire('Commercial', l.commercial);
+  f.appendChild(dl);
+
+  ajout(f, 'h2', 'Centres d\u2019intérêt');
+  var ul = document.createElement('ul');
+  (l.interets || []).forEach(function(i){ ajout(ul, 'li', i); });
+  f.appendChild(ul);
+
+  ajout(f, 'h2', 'Bilan comptable');
+  ajout(f, 'div', l.bilan_fourni
+    ? 'Bilan joint — ' + (l.bilan_nom_origine || 'document')
+    : 'Aucun bilan joint.', 'f-bilan');
+
+  ajout(f, 'div', 'Document interne VSM — coordonnées de dirigeant et données comptables. ' +
+    'Édité le ' + dateLongue(new Date().toISOString()) + '.', 'f-pied');
+
+  window.print();
+}
+
+function dateLongue(iso){
+  return new Date(iso).toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  }) + ' à ' + new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
 function fermerPanneau(){
@@ -321,6 +389,7 @@ if(jetonMail){
       $('expire').textContent = 'Réponse ouverte depuis votre e-mail';
       $('exportBtn').style.display = 'none';
       $('logoutBtn').textContent = 'Voir toutes les réponses';
+      $('logoutBtn').className = 'btn ghost';
       detail(d.lead);
     })
     .catch(function(ex){

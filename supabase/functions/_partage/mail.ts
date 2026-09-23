@@ -118,7 +118,6 @@ export async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<
     // §7 du brief : l'absence doit être dite explicitement, et seulement dite.
     bilanHtml = encadre("#FBEAE8", "<b>Aucun bilan joint.</b>");
   } else {
-    const mo = ((l.bilan_taille ?? 0) / 1048576).toFixed(1).replace(".", ",");
     const nom = l.bilan_nom_origine ?? `bilan-${l.reference}`;
 
     if (MODE_PJ && (l.bilan_taille ?? 0) <= PJ_MAX) {
@@ -126,17 +125,17 @@ export async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<
       if (error || !data) throw new Error(`lecture du bilan impossible : ${error?.message}`);
       pieces.push({ content: base64(new Uint8Array(await data.arrayBuffer())), name: nom });
       pieceJointe = true;
-      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo, en pièce jointe.`);
+      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, en pièce jointe.`);
     } else if (CONSOLE_URL) {
       // Le téléchargement se fait dans la console : pas d'URL de fichier
       // comptable qui traîne un an dans des boîtes mail.
-      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo.`);
+      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}.`);
     } else {
       const { data, error } = await sb.storage.from(BUCKET)
         .createSignedUrl(l.bilan_chemin, LIEN_JOURS * 86400, { download: nom });
       if (error || !data) throw new Error(`URL signée impossible : ${error?.message}`);
       bilanHtml = encadre("#E7F7F0",
-        `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
+        `<b>Bilan joint</b> — ${echapper(nom)}<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
     }
   }
 

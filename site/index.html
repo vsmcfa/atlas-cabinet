@@ -186,7 +186,7 @@
           <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Joindre votre bilan comptable">
             <div class="icon">📎</div>
             <div class="txt">Cliquez ou déposez votre fichier ici</div>
-            <div class="sub">PDF de préférence — une photo lisible convient si vous n'avez que le papier. 20 Mo maximum.</div>
+            <div class="sub">PDF de préférence — une photo lisible convient si vous n'avez que le papier. Les photos sont optimisées automatiquement.</div>
             <input type="file" id="bilanFile" name="bilan" accept="application/pdf,image/*">
           </div>
           <div class="file-selected" id="fileSelected">
@@ -230,7 +230,10 @@
 // ⚠️ À REMPLACER par l'URL de votre projet Supabase (cf. README, étape 6).
 var API = 'https://lioymgigpojlqzrggkff.supabase.co/functions/v1/lead';
 
-var MAX_OCTETS = 20 * 1024 * 1024;
+var MAX_OCTETS   = 50 * 1024 * 1024;   // plafond absolu accepté par le serveur
+var SEUIL_COMPR  = 12 * 1024 * 1024;   // au-delà, une image est recompressée
+var CIBLE_COMPR  =  9 * 1024 * 1024;   // taille visée après compression
+var COTE_MAX     = 2600;               // px sur le plus grand côté
 
 var form         = document.getElementById('atlasForm');
 var uploadZone   = document.getElementById('uploadZone');
@@ -244,6 +247,7 @@ var progress     = document.getElementById('progress');
 var progressBar  = document.getElementById('progressBar');
 var progressTxt  = document.getElementById('progressTxt');
 
+var fichierPret = null;                // fichier réellement envoyé (compressé ou non)
 var ouvertureLe = Date.now();          // sert au contrôle « rempli en moins de 3 s »
 var envoiEnCours = false;
 
@@ -282,6 +286,7 @@ function verrouiller(actif, libelle){
 /* ------------------------------------------------------- choix du fichier */
 
 function resetFile(){
+  fichierPret = null;
   fileInput.value = '';
   fileSelected.style.display = 'none';
   uploadZone.style.display = 'block';
@@ -315,24 +320,86 @@ function lireTypeReel(file){
   });
 }
 
+/* Un bilan photographié par un iPhone pèse couramment 25 à 40 Mo, pour une
+   image bien plus grande que nécessaire : 2600 px sur le grand côté suffisent
+   très largement à lire un bilan comptable, y compris les petits caractères.
+   On redimensionne puis on réencode en JPEG, en baissant la qualité par
+   paliers seulement si c'est nécessaire — jamais sous 0,72, en deçà les
+   aplats d'un scan se dégradent visiblement.
+
+   Les PDF ne passent pas par ici : les recompresser demanderait une grosse
+   bibliothèque pour un résultat médiocre. Ils sont acceptés jusqu'à 50 Mo. */
+function compresserImage(file){
+  return createImageBitmap(file).then(function(img){
+    var ratio = Math.min(1, COTE_MAX / Math.max(img.width, img.height));
+    var l = Math.round(img.width * ratio);
+    var h = Math.round(img.height * ratio);
+
+    var toile = document.createElement('canvas');
+    toile.width = l; toile.height = h;
+    var ctx = toile.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, l, h);
+    if(img.close) img.close();
+
+    var qualites = [0.88, 0.82, 0.76, 0.72];
+
+    function essayer(i){
+      return new Promise(function(resolve){
+        toile.toBlob(function(blob){
+          if(!blob) return resolve(null);
+          if(blob.size <= CIBLE_COMPR || i === qualites.length - 1) return resolve(blob);
+          resolve(essayer(i + 1));
+        }, 'image/jpeg', qualites[i]);
+      });
+    }
+    return essayer(0);
+  }).then(function(blob){
+    if(!blob || blob.size >= file.size) return null;   // compression inutile
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  }).catch(function(){
+    // HEIC sous Chrome, mémoire insuffisante sur un vieux téléphone…
+    return null;
+  });
+}
+
 function handleFile(file){
-  if(file.size > MAX_OCTETS){
-    resetFile();
-    showError('Ce fichier fait ' + formatSize(file.size) + '. La limite est de 20 Mo — compressez-le ou envoyez seulement les pages du bilan.');
-    return;
-  }
+  clearError();
   lireTypeReel(file).then(function(type){
     if(!type){
       resetFile();
-      showError('Ce fichier n’est ni un PDF ni une image. Envoyez votre bilan en PDF, ou une photo lisible.');
+      showError('Ce fichier n\u2019est ni un PDF ni une image. Envoyez votre bilan en PDF, ou une photo lisible.');
       return;
     }
-    clearError();
-    fileNameEl.textContent = file.name;
-    fileSizeEl.textContent = formatSize(file.size);
-    fileSelected.style.display = 'flex';
-    uploadZone.style.display = 'none';
+    // Image trop lourde : on l'allège avant l'envoi, sans rien demander.
+    if(type !== 'application/pdf' && file.size > SEUIL_COMPR){
+      setProgress(8, 'Optimisation de votre photo\u2026');
+      return compresserImage(file).then(function(allege){
+        hideProgress();
+        retenir(allege || file, allege ? file.size : 0);
+      });
+    }
+    retenir(file, 0);
   });
+}
+
+/** Retient le fichier à envoyer. `avant` > 0 signale une compression. */
+function retenir(file, avant){
+  if(file.size > MAX_OCTETS){
+    resetFile();
+    showError('Ce fichier fait ' + formatSize(file.size) +
+      '. La limite est de 50 Mo \u2014 envoyez seulement les pages utiles du bilan.');
+    return;
+  }
+  fichierPret = file;
+  clearError();
+  fileNameEl.textContent = file.name;
+  fileSizeEl.textContent = avant
+    ? formatSize(avant) + ' \u2192 ' + formatSize(file.size)
+    : formatSize(file.size);
+  fileSelected.style.display = 'flex';
+  uploadZone.style.display = 'none';
 }
 
 uploadZone.addEventListener('click', function(){ fileInput.click(); });
@@ -427,9 +494,9 @@ form.addEventListener('submit', function(e){
     return;
   }
 
-  var file = fileInput.files[0] || null;    // le bilan est FACULTATIF
+  var file = fichierPret;                   // le bilan est FACULTATIF
   if(file && file.size > MAX_OCTETS){
-    showError('Le fichier dépasse 20 Mo.');
+    showError('Le fichier dépasse 50 Mo.');
     return;
   }
 
