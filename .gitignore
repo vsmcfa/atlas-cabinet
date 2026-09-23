@@ -13,3 +13,6 @@ supabase/.branches/
 
 # Paquets de livraison, régénérés à la demande
 livraison/
+
+# Préférences personnelles Claude Code (permissions) — ne pas partager.
+.claude/settings.local.json
