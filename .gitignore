@@ -7,3 +7,9 @@ node_modules/
 # Jamais de secrets dans le dépôt : .env.example documente, .env contient.
 supabase/.temp/
 supabase/.branches/
+
+# Mot de passe de la base — ne doit jamais partir sur GitHub.
+.db-password.txt
+
+# Paquets de livraison, régénérés à la demande
+livraison/

@@ -8,7 +8,7 @@
 ------------------------------------------------------------------------- */
 
 // ⚠️ À REMPLACER par l'URL de votre projet Supabase (cf. README).
-var API = 'https://VOTRE-PROJET.supabase.co/functions/v1/admin';
+var API = 'https://lioymgigpojlqzrggkff.supabase.co/functions/v1/admin';
 
 // sessionStorage et non localStorage : la session tombe à la fermeture de
 // l'onglet. Sur un téléphone posé sur un comptoir, ça compte.

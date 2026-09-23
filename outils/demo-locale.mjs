@@ -141,9 +141,12 @@ function servir(dossier, port, nom) {
     try {
       let contenu = await readFile(fichier, 'utf8')
       // Injection à la volée : les fichiers du dépôt gardent leur URL de production.
-      contenu = contenu
-        .replace("https://VOTRE-PROJET.supabase.co/functions/v1/lead", `${API}/functions/v1/lead`)
-        .replace("https://VOTRE-PROJET.supabase.co/functions/v1/admin", `${API}/functions/v1/admin`)
+      // Quel que soit le projet configuré, la démo tape TOUJOURS l'API locale :
+      // sans cette réécriture, ouvrir localhost enverrait de vrais leads en
+      // production. Le motif couvre aussi bien le gabarit que l'URL réelle.
+      contenu = contenu.replace(
+        /https:\/\/[a-zA-Z0-9-]+\.supabase\.co\/functions\/v1\/(lead|admin)/g,
+        `${API}/functions/v1/$1`)
       res.writeHead(200, { 'content-type': `${TYPES[extname(fichier)] ?? 'text/plain'}; charset=utf-8` })
       res.end(contenu)
     } catch {
