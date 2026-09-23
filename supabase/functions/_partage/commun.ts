@@ -1,5 +1,5 @@
 // Helpers partagés par les Edge Functions ATLAS.
-import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2.116.0";
 
 export const BUCKET = "bilans";
 

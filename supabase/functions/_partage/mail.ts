@@ -1,5 +1,5 @@
 // Envoi de la notification de lead via l'API transactionnelle Brevo.
-import { type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { type SupabaseClient } from "jsr:@supabase/supabase-js@2.116.0";
 import { BUCKET } from "./commun.ts";
 
 // Le bilan n'est PAS mis en pièce jointe : il est hébergé sur Supabase Storage

@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@supabase/supabase-js@2": "2.116.0",
+    "jsr:@supabase/supabase-js@2.116.0": "2.116.0",
     "npm:@supabase/auth-js@2.116.0": "2.116.0",
     "npm:@supabase/functions-js@2.116.0": "2.116.0",
     "npm:@supabase/postgrest-js@2.116.0": "2.116.0",

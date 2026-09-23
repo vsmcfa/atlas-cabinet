@@ -5,7 +5,7 @@
 // À coller dans Dashboard > Edge Functions, qui ne sait pas charger _partage/.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2";
+import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2.116.0";
 
 // Helpers partagés par les Edge Functions ATLAS.
 

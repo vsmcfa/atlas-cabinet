@@ -5,7 +5,7 @@
 // À coller dans Dashboard > Edge Functions, qui ne sait pas charger _partage/.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2";
+import { SupabaseClient, createClient } from "jsr:@supabase/supabase-js@2.116.0";
 
 // Helpers partagés par les Edge Functions ATLAS.
 
@@ -504,18 +504,28 @@ async function enregistrer(req: Request): Promise<Response> {
 async function verifierObjet(chemin: string): Promise<
   { ok: true; taille: number; type: string } | { ok: false; motif: string; message: string }
 > {
-  // Une seule requête Range donne à la fois l'existence, la taille réelle
-  // et les octets d'en-tête. On ne fait confiance à rien de ce que le
-  // navigateur a déclaré.
-  const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/storage/v1/object/${BUCKET}/${chemin}`, {
-    headers: {
-      authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-      range: "bytes=0-63",
-    },
-  });
+  const sb = admin();
 
+  // Une URL signée courte, puis UNE requête Range : on obtient d'un coup
+  // l'existence, la taille réelle et les octets d'en-tête. On passe par l'URL
+  // signée plutôt que par l'API authentifiée en direct, car c'est le chemin de
+  // lecture que le Storage sert de façon identique partout.
+  const { data: signee, error: eSign } = await sb.storage.from(BUCKET).createSignedUrl(chemin, 60);
+  if (eSign || !signee) {
+    return {
+      ok: false,
+      motif: `objet introuvable dans le Storage : ${eSign?.message ?? "sans détail"}`,
+      message: "Le fichier n'est pas arrivé jusqu'à nous. Retirez-le et réessayez.",
+    };
+  }
+
+  const r = await fetch(signee.signedUrl, { headers: { range: "bytes=0-63" } });
   if (!r.ok && r.status !== 206) {
-    return { ok: false, motif: `objet introuvable (${r.status})`, message: "Le fichier n'est pas arrivé jusqu'à nous. Retirez-le et réessayez." };
+    return {
+      ok: false,
+      motif: `lecture impossible (HTTP ${r.status})`,
+      message: "Le fichier n'a pas pu être lu. Retirez-le et réessayez.",
+    };
   }
 
   const entete = new Uint8Array(await r.arrayBuffer());
