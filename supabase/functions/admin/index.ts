@@ -8,6 +8,7 @@
 // Conséquence : ni la clé anon, ni la moindre ligne de « leads » ne sont
 // atteignables sans le mot de passe. Le code source de la page ne révèle rien.
 //
+//   POST /admin/reponse  { jeton_lead }        -> { lead }   (lien du mail)
 //   POST /admin/session  { motdepasse }        -> { jeton, expire_at }
 //   POST /admin/leads    { jeton, recherche? } -> { leads, total }
 //   POST /admin/bilan    { jeton, id }         -> { url }      (signée 1 h)
@@ -27,9 +28,13 @@ Deno.serve(async (req) => {
   const route = new URL(req.url).pathname.split("/").filter(Boolean).pop() ?? "";
   try {
     if (route === "session") return await ouvrirSession(req);
+    if (route === "reponse") return await parJetonLead(req);
 
     const corps = await req.json().catch(() => ({}));
-    if (!await jetonValide(corps.jeton)) {
+    // Le bilan s'ouvre soit avec une session, soit avec le jeton de la fiche
+    // reçue par mail — mais uniquement pour CETTE fiche (vérifié plus bas).
+    const parLien = route === "bilan" && await jetonLeadValide(corps.jeton_lead, corps.id);
+    if (!parLien && !await jetonValide(corps.jeton)) {
       return json(req, { erreur: "Session expirée. Reconnectez-vous." }, 401);
     }
     if (route === "leads") return await listerLeads(req, corps);
@@ -83,6 +88,52 @@ async function jetonValide(jeton: unknown): Promise<boolean> {
   if (!expire || !signature) return false;
   if (Number(expire) < Date.now()) return false;
   return await signatureValide(`admin:${expire}`, signature);
+}
+
+/* ------------------------------------------ accès direct depuis le mail */
+
+/**
+ * Le mail de notification contient un lien signé vers UNE fiche. Le jeton
+ * n'ouvre que celle-là, et il expire. Il ne donne aucun accès à la liste
+ * complète : celle-ci reste derrière le mot de passe.
+ *
+ * Contrepartie assumée : quiconque reçoit ce lien voit cette fiche sans mot de
+ * passe. Le mail part sur une boîte interne ; ne pas le faire suivre à
+ * l'extérieur.
+ */
+async function parJetonLead(req: Request): Promise<Response> {
+  const sb = admin();
+  const { jeton_lead } = await req.json().catch(() => ({ jeton_lead: "" }));
+
+  if (await limiteDebitDepassee(sb, req, "admin-reponse", 60)) {
+    return json(req, { erreur: "Trop de tentatives. Patientez quelques minutes." }, 429);
+  }
+
+  const [id, expire, signature] = String(jeton_lead ?? "").split(".");
+  if (!id || !expire || !signature) return json(req, { erreur: "Lien invalide." }, 400);
+
+  if (Number(expire) < Date.now()) {
+    return json(req, { erreur: "Ce lien a expiré. Ouvrez la console avec le mot de passe." }, 410);
+  }
+  if (!await signatureValide(`lead:${id}:${expire}`, signature)) {
+    await journaliserRejet(sb, "jeton_lead", `signature invalide pour ${id}`, req);
+    return json(req, { erreur: "Lien invalide." }, 401);
+  }
+
+  const { data, error } = await sb.from("leads").select(CHAMPS).eq("id", id)
+    .maybeSingle<LeadLigne>();
+  if (error || !data) return json(req, { erreur: "Réponse introuvable." }, 404);
+
+  return json(req, { lead: data });
+}
+
+/** Le jeton doit être valide ET désigner exactement la fiche demandée. */
+async function jetonLeadValide(jeton: unknown, idDemande: unknown): Promise<boolean> {
+  const [id, expire, signature] = String(jeton ?? "").split(".");
+  if (!id || !expire || !signature) return false;
+  if (id !== String(idDemande ?? "")) return false;
+  if (Number(expire) < Date.now()) return false;
+  return await signatureValide(`lead:${id}:${expire}`, signature);
 }
 
 /* --------------------------------------------------------------- leads */

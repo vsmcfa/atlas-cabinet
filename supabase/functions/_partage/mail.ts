@@ -1,6 +1,6 @@
 // Envoi de la notification de lead via l'API transactionnelle Brevo.
 import { type SupabaseClient } from "jsr:@supabase/supabase-js@2.116.0";
-import { BUCKET } from "./commun.ts";
+import { BUCKET, signer } from "./commun.ts";
 
 // Le bilan n'est PAS mis en pièce jointe : il est hébergé sur Supabase Storage
 // (bucket privé) et le mail porte une URL signée à durée limitée. Conséquences
@@ -14,6 +14,19 @@ const PJ_MAX = Number(Deno.env.get("MAIL_PJ_MAX_OCTETS") ?? 9 * 1024 * 1024);
 // doit rester utile longtemps. Le fichier, lui, reste dans Supabase même après
 // expiration du lien — on le retrouve alors par sa référence.
 const LIEN_JOURS = Number(Deno.env.get("LIEN_BILAN_JOURS") ?? 365);
+
+// Console de consultation. Le mail ne déroule plus les réponses : il annonce,
+// et renvoie vers la fiche. Moins de données personnelles recopiées dans des
+// boîtes mail, et une seule source de vérité.
+const CONSOLE_URL = (Deno.env.get("ADMIN_URL") ?? "").replace(/\/+$/, "");
+// Durée de validité du lien direct contenu dans le mail.
+const JETON_JOURS = Number(Deno.env.get("JETON_LEAD_JOURS") ?? 30);
+
+/** Jeton signé donnant accès à UNE fiche, et à elle seule. */
+async function jetonLead(id: string): Promise<string> {
+  const expire = Date.now() + JETON_JOURS * 86400_000;
+  return `${id}.${expire}.${await signer(`lead:${id}:${expire}`)}`;
+}
 
 export type Lead = {
   id: string;
@@ -48,31 +61,36 @@ function base64(octets: Uint8Array): string {
 const encadre = (couleur: string, texte: string) =>
   `<p style="background:${couleur};border-radius:10px;padding:12px 14px;font-size:14px;color:#202B3D;margin:0;line-height:1.6">${texte}</p>`;
 
-function corpsHtml(l: Lead, bilan: string): string {
-  const ligne = (k: string, v: string) =>
-    `<tr><td style="padding:7px 14px 7px 0;color:#66707F;font-size:13px;white-space:nowrap;vertical-align:top">${k}</td>` +
-    `<td style="padding:7px 0;color:#202B3D;font-size:14px;font-weight:600">${v}</td></tr>`;
+function corpsHtml(l: Lead, bilan: string, lien: string): string {
+  const fait = (k: string, v: string) =>
+    `<tr><td style="padding:5px 14px 5px 0;color:#66707F;font-size:13px;white-space:nowrap">${k}</td>` +
+    `<td style="padding:5px 0;color:#202B3D;font-size:14px;font-weight:600">${v}</td></tr>`;
 
-  return `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;max-width:620px">
-  <h2 style="color:#16305C;font-size:19px;margin:0 0 4px">Nouveau lead — ${echapper(l.garage)}</h2>
-  <p style="color:#66707F;font-size:13px;margin:0 0 18px">Référence <b>${l.reference}</b> · ${new Date(l.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" })}</p>
-  <table style="border-collapse:collapse;width:100%">
-    ${ligne("Garage", echapper(l.garage))}
-    ${ligne("Dirigeant", echapper(l.dirigeant))}
-    ${ligne("Téléphone", `<a href="tel:${echapper(l.telephone.replace(/\s/g, ""))}" style="color:#2A5FBF">${echapper(l.telephone)}</a>`)}
-    ${ligne("E-mail", `<a href="mailto:${echapper(l.email)}" style="color:#2A5FBF">${echapper(l.email)}</a>`)}
-    ${ligne("Salariés", String(l.salaries))}
-    ${ligne("Commercial", l.commercial ? echapper(l.commercial) : "<span style='color:#66707F;font-weight:400'>non renseigné</span>")}
+  const bouton = lien
+    ? `<table cellpadding="0" cellspacing="0" style="margin:22px 0"><tr><td style="border-radius:100px;background:#2A5FBF">
+         <a href="${lien}" style="display:inline-block;padding:14px 30px;font-family:-apple-system,Segoe UI,Inter,sans-serif;
+            font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none">Consulter la réponse →</a>
+       </td></tr></table>
+       <p style="color:#66707F;font-size:12px;margin:0 0 4px">Ce lien ouvre directement la fiche du garage. Il expire dans ${JETON_JOURS} jours.</p>`
+    : `<p style="background:#FDF6E3;border-radius:10px;padding:12px 14px;font-size:13px;color:#B7791F;margin:22px 0">
+         La console de consultation n'est pas configurée (variable <b>ADMIN_URL</b> absente) : le lien direct manque.</p>`;
+
+  return `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;max-width:560px">
+  <p style="color:#66707F;font-size:13px;margin:0 0 6px">ATLAS Cabinet — formulaire garage</p>
+  <h2 style="color:#16305C;font-size:20px;margin:0 0 18px">Nouvelle réponse de ${echapper(l.garage)}</h2>
+
+  <table style="border-collapse:collapse">
+    ${fait("Dirigeant", echapper(l.dirigeant))}
+    ${fait("Téléphone", `<a href="tel:${echapper(l.telephone.replace(/\s/g, ""))}" style="color:#2A5FBF">${echapper(l.telephone)}</a>`)}
+    ${fait("Reçu le", new Date(l.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }))}
   </table>
-  <p style="color:#16305C;font-size:13px;font-weight:700;margin:20px 0 6px">Centres d'intérêt</p>
-  <ul style="margin:0;padding-left:18px;color:#202B3D;font-size:14px;line-height:1.7">
-    ${l.interets.map((i) => `<li>${echapper(i)}</li>`).join("")}
-  </ul>
-  <p style="color:#16305C;font-size:13px;font-weight:700;margin:20px 0 6px">Bilan comptable</p>
+
   ${bilan}
-  <p style="color:#66707F;font-size:12px;margin-top:22px;border-top:1px solid #E4E9F1;padding-top:12px">
-    Répondre à ce message écrit directement au garage (${echapper(l.email)}).<br>
-    Le dossier complet reste consultable dans Supabase sous la référence ${l.reference}.
+  ${bouton}
+
+  <p style="color:#66707F;font-size:12px;margin-top:20px;border-top:1px solid #E4E9F1;padding-top:12px">
+    Référence ${l.reference}${l.commercial ? ` · commercial ${echapper(l.commercial)}` : ""}<br>
+    Répondre à ce message écrit directement au garage (${echapper(l.email)}).
   </p>
 </div>`;
 }
@@ -90,6 +108,8 @@ export async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<
   // (DKIM/DMARC) sur le domaine vsmcfa.com dans Brevo. Rien à faire côté DNS.
   const expediteur = Deno.env.get("MAIL_EXPEDITEUR") ?? "contact@vsmcfa.com";
 
+  const lien = CONSOLE_URL ? `${CONSOLE_URL}/?r=${await jetonLead(l.id)}` : "";
+
   const pieces: { content: string; name: string }[] = [];
   let bilanHtml: string;
   let pieceJointe = false;
@@ -106,17 +126,17 @@ export async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<
       if (error || !data) throw new Error(`lecture du bilan impossible : ${error?.message}`);
       pieces.push({ content: base64(new Uint8Array(await data.arrayBuffer())), name: nom });
       pieceJointe = true;
-      bilanHtml = encadre("#E7F7F0", `📎 <b>${echapper(nom)}</b> — ${mo} Mo, en pièce jointe de ce message.`);
+      bilanHtml = encadre("#E7F7F0", `📎 <b>${echapper(nom)}</b> — ${mo} Mo, en pièce jointe.`);
+    } else if (CONSOLE_URL) {
+      // Le téléchargement se fait dans la console : pas d'URL de fichier
+      // comptable qui traîne un an dans des boîtes mail.
+      bilanHtml = encadre("#E7F7F0", `📎 <b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo. Téléchargeable depuis la fiche.`);
     } else {
       const { data, error } = await sb.storage.from(BUCKET)
         .createSignedUrl(l.bilan_chemin, LIEN_JOURS * 86400, { download: nom });
       if (error || !data) throw new Error(`URL signée impossible : ${error?.message}`);
-      bilanHtml = encadre(
-        "#E7F7F0",
-        `📄 <b>${echapper(nom)}</b> — ${mo} Mo<br>` +
-        `<a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a> ` +
-        `<span style="color:#66707F;font-size:12px">— lien valable ${LIEN_JOURS} jours. Passé ce délai, le fichier reste dans Supabase.</span>`,
-      );
+      bilanHtml = encadre("#E7F7F0",
+        `📄 <b>${echapper(nom)}</b> — ${mo} Mo<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
     }
   }
 
@@ -128,8 +148,9 @@ export async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<
       to: [{ email: destinataire }],
       // §9 : « Répondre » dans Gmail doit viser le garage, pas le serveur.
       replyTo: { email: l.email, name: l.dirigeant },
-      subject: `Nouveau lead — ${l.garage}`,
-      htmlContent: corpsHtml(l, bilanHtml),
+      // Préfixe fixe : repérable d'un coup d'œil et filtrable dans Gmail.
+      subject: `ATLAS Cabinet — Nouvelle réponse de ${l.garage}`,
+      htmlContent: corpsHtml(l, bilanHtml, lien),
       tags: ["atlas-lead"],
       ...(pieces.length ? { attachment: pieces } : {}),
     }),

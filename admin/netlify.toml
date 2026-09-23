@@ -1,8 +1,4 @@
-# Configuration du site ADMIN (dossier admin/), déployé SÉPARÉMENT
-# sur son propre site Netlify — c'est le cloisonnement demandé.
-[build]
-  publish = "admin"
-
+# Ce dossier est publié tel quel par `netlify deploy --dir`.
 [[headers]]
   for = "/*"
   [headers.values]

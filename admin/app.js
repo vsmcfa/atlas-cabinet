@@ -14,7 +14,7 @@ var API = 'https://lioymgigpojlqzrggkff.supabase.co/functions/v1/admin';
 // l'onglet. Sur un téléphone posé sur un comptoir, ça compte.
 var CLE = 'atlas-admin-jeton';
 
-var etat = { jeton: null, page: 0, total: 0, recherche: '', aTraiter: false, leads: [] };
+var etat = { jeton: null, jetonLead: null, page: 0, total: 0, recherche: '', aTraiter: false, leads: [] };
 var minuteur = null;
 
 var $ = function(id){ return document.getElementById(id); };
@@ -70,6 +70,9 @@ function ouvrir(session){
 function deconnecter(motif){
   try { sessionStorage.removeItem(CLE); } catch(_){}
   etat.jeton = null;
+  etat.jetonLead = null;
+  $('exportBtn').style.display = '';
+  $('logoutBtn').textContent = 'Fermer';
   fermerPanneau();
   $('entete').style.display = 'none';
   $('console').style.display = 'none';
@@ -215,7 +218,7 @@ function detail(l){
     dl2.style.marginTop = '10px';
     dl2.addEventListener('click', function(){
       dl2.disabled = true; dl2.textContent = 'Préparation…';
-      appel('bilan', { jeton: etat.jeton, id: l.id })
+      appel('bilan', { jeton: etat.jeton, jeton_lead: etat.jetonLead, id: l.id })
         .then(function(d){ window.location.href = d.url; })
         .catch(function(ex){ if(!(ex && ex.silencieux)) alert((ex && ex.message) || 'Téléchargement impossible.'); })
         .finally(function(){ dl2.disabled = false; dl2.textContent = 'Télécharger'; });
@@ -244,6 +247,9 @@ function detail(l){
 function fermerPanneau(){
   $('panel').style.display = 'none';
   $('overlay').style.display = 'none';
+  // Arrivé par le lien d'un mail : il n'y a pas de liste derrière, on propose
+  // d'ouvrir la console complète plutôt que de laisser un écran vide.
+  if(etat.jetonLead && !etat.jeton) deconnecter(null);
 }
 $('overlay').addEventListener('click', fermerPanneau);
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') fermerPanneau(); });
@@ -297,10 +303,39 @@ $('exportBtn').addEventListener('click', function(){
   });
 });
 
+/* --------------------------------- ouverture directe depuis un lien de mail */
+
+/* Le mail de notification porte ?r=<jeton>. Ce jeton n'ouvre QUE la fiche
+   concernée : la liste complète reste derrière le mot de passe. */
+var jetonMail = new URLSearchParams(window.location.search).get('r');
+if(jetonMail){
+  etat.jetonLead = jetonMail;
+  // L'URL est nettoyée tout de suite : le jeton ne doit pas rester dans la
+  // barre d'adresse, l'historique, ni partir en Referer.
+  history.replaceState(null, '', window.location.pathname);
+
+  $('gate').style.display = 'none';
+  appel('reponse', { jeton_lead: jetonMail })
+    .then(function(d){
+      $('entete').style.display = 'block';
+      $('expire').textContent = 'Réponse ouverte depuis votre e-mail';
+      $('exportBtn').style.display = 'none';
+      $('logoutBtn').textContent = 'Voir toutes les réponses';
+      detail(d.lead);
+    })
+    .catch(function(ex){
+      if(ex && ex.silencieux) return;
+      $('gate').style.display = 'block';
+      $('loginError').textContent = (ex && ex.message) ||
+        'Ce lien n\u2019a pas pu être ouvert. Connectez-vous pour retrouver la réponse.';
+      $('loginError').style.display = 'block';
+    });
+}
+
 /* --------------------------------------------- reprise de session ouverte */
 
 try {
-  var brut = sessionStorage.getItem(CLE);
+  var brut = jetonMail ? null : sessionStorage.getItem(CLE);
   if(brut){
     var s = JSON.parse(brut);
     if(s && s.jeton && new Date(s.expire_at) > new Date()) ouvrir(s);
