@@ -245,7 +245,7 @@ function corpsHtml(l: Lead, bilan: string, lien: string): string {
          <a href="${lien}" style="display:inline-block;padding:14px 30px;font-family:-apple-system,Segoe UI,Inter,sans-serif;
             font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none">Consulter la réponse →</a>
        </td></tr></table>
-       <p style="color:#66707F;font-size:12px;margin:0 0 4px">Ce lien ouvre directement la fiche du garage. Il expire dans ${JETON_JOURS} jours.</p>`
+       <p style="color:#66707F;font-size:12px;margin:0 0 4px">Lien valable ${JETON_JOURS} jours.</p>`
     : `<p style="background:#FDF6E3;border-radius:10px;padding:12px 14px;font-size:13px;color:#B7791F;margin:22px 0">
          La console de consultation n'est pas configurée (variable <b>ADMIN_URL</b> absente) : le lien direct manque.</p>`;
 
@@ -264,7 +264,7 @@ function corpsHtml(l: Lead, bilan: string, lien: string): string {
 
   <p style="color:#66707F;font-size:12px;margin-top:20px;border-top:1px solid #E4E9F1;padding-top:12px">
     Référence ${l.reference}${l.commercial ? ` · commercial ${echapper(l.commercial)}` : ""}<br>
-    Répondre à ce message écrit directement au garage (${echapper(l.email)}).
+    Réponse dirigée vers ${echapper(l.email)}.
   </p>
 </div>`;
 }
@@ -289,8 +289,8 @@ async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<{ piece
   let pieceJointe = false;
 
   if (!l.bilan_fourni || !l.bilan_chemin) {
-    // §7 du brief : le dire explicitement, pour que l'équipe le réclame au rappel.
-    bilanHtml = encadre("#FBEAE8", "⚠️ <b>Aucun bilan joint.</b> À réclamer lors du rappel.");
+    // §7 du brief : l'absence doit être dite explicitement, et seulement dite.
+    bilanHtml = encadre("#FBEAE8", "<b>Aucun bilan joint.</b>");
   } else {
     const mo = ((l.bilan_taille ?? 0) / 1048576).toFixed(1).replace(".", ",");
     const nom = l.bilan_nom_origine ?? `bilan-${l.reference}`;
@@ -300,17 +300,17 @@ async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<{ piece
       if (error || !data) throw new Error(`lecture du bilan impossible : ${error?.message}`);
       pieces.push({ content: base64(new Uint8Array(await data.arrayBuffer())), name: nom });
       pieceJointe = true;
-      bilanHtml = encadre("#E7F7F0", `📎 <b>${echapper(nom)}</b> — ${mo} Mo, en pièce jointe.`);
+      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo, en pièce jointe.`);
     } else if (CONSOLE_URL) {
       // Le téléchargement se fait dans la console : pas d'URL de fichier
       // comptable qui traîne un an dans des boîtes mail.
-      bilanHtml = encadre("#E7F7F0", `📎 <b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo. Téléchargeable depuis la fiche.`);
+      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo.`);
     } else {
       const { data, error } = await sb.storage.from(BUCKET)
         .createSignedUrl(l.bilan_chemin, LIEN_JOURS * 86400, { download: nom });
       if (error || !data) throw new Error(`URL signée impossible : ${error?.message}`);
       bilanHtml = encadre("#E7F7F0",
-        `📄 <b>${echapper(nom)}</b> — ${mo} Mo<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
+        `<b>Bilan joint</b> — ${echapper(nom)}, ${mo} Mo<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
     }
   }
 

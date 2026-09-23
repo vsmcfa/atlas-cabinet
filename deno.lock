@@ -67,6 +67,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:netlify-cli@^27.8.1",
         "npm:supabase@^2.117.0"
       ]
     }

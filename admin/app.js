@@ -227,7 +227,7 @@ function detail(l){
     p.appendChild(box);
   } else {
     var no = document.createElement('div'); no.className = 'box no';
-    no.textContent = '⚠️ Aucun bilan joint — à réclamer lors du rappel.';
+    no.textContent = 'Aucun bilan joint.';
     p.appendChild(no);
   }
 
