@@ -10,8 +10,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PROJET=lioymgigpojlqzrggkff
-SITE_FORMULAIRE=cabinet-atlas-link      # site prospect
-SITE_ADMIN=atlasinterface               # console de consultation
+SITE_FORMULAIRE=2db7e637-beeb-4cd5-90e0-e36631c64d02   # cabinet-atlas-link
+SITE_ADMIN=3462a6e2-7027-4ad3-9ff1-2c47a69031fc        # atlasinterface
 QUOI="${1:-tout}"
 
 vert() { printf '\033[32m%s\033[0m\n' "$1"; }
