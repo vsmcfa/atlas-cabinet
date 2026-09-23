@@ -159,10 +159,19 @@ async function limiteDebitDepassee(
 ): Promise<boolean> {
   const ip = ipDe(req);
   if (!ip) return false;
-  const { data, error } = await sb.rpc("compter_hits", { p_ip: ip, p_fenetre_minutes: fenetreMin });
+  // La route fait partie de la clé : le trafic du formulaire ne doit pas
+  // pouvoir fermer la porte de la console d'administration.
+  const { data, error } = await sb.rpc("compter_hits", {
+    p_ip: ip, p_route: route, p_fenetre_minutes: fenetreMin,
+  });
   if (error) { console.error("compter_hits", error); return false; }  // en cas de doute, on laisse passer
-  await sb.from("hits").insert({ ip, route });
-  return (data as number) >= max;
+
+  const depasse = (data as number) >= max;
+  // On n'enregistre PAS les requêtes déjà refusées : sinon chaque nouvel essai
+  // repousse la fenêtre, et quelqu'un qui réessaie reste bloqué pour toujours.
+  // Le refus, lui, part dans la table « rejets » par l'appelant.
+  if (!depasse) await sb.from("hits").insert({ ip, route });
+  return depasse;
 }
 
 // Envoi de la notification de lead via l'API transactionnelle Brevo.
