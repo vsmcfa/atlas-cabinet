@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATLAS — Votre audit gratuit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16305C;
+    --blue:#2A5FBF;
+    --blue-tint:#EAF2FC;
+    --bg:#FAFBFD;
+    --green:#1E9E6B;
+    --green-tint:#E7F7F0;
+    --red:#C0392B;
+    --red-tint:#FBEAE8;
+    --ink:#202B3D;
+    --grey:#66707F;
+    --line:#E4E9F1;
+    --white:#FFFFFF;
+    --shadow: none;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);}
+  .wrap{max-width:620px;margin:0 auto;padding:0 24px;}
+
+  header{background:var(--navy);padding:24px 0;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:24px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .month-badge{background:var(--blue);color:var(--white);font-weight:700;font-size:13px;letter-spacing:0.5px;padding:8px 16px;border-radius:100px;}
+
+  .greeting{background:var(--white);padding:26px 0 22px;border-bottom:1px solid var(--line);}
+  .greeting h1{font-size:21px;margin-bottom:6px;}
+  .greeting p{color:var(--grey);font-size:14.5px;}
+
+  section{padding:26px 0 44px;}
+
+  .form-card{background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:26px 24px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+  .field .hint{font-size:12px;color:var(--grey);font-weight:500;margin-top:5px;}
+  .field input[type="text"], .field input[type="tel"], .field input[type="number"], .field input[type="email"]{
+    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:16px;color:var(--ink);background:var(--bg);
+  }
+  .field input:focus{outline:none;border-color:var(--blue);background:var(--white);}
+  .field input:focus-visible{outline:2px solid var(--blue);outline-offset:1px;}
+
+  .interest-list{display:flex;flex-direction:column;gap:9px;}
+  .interest-item{display:flex;align-items:flex-start;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 14px;cursor:pointer;}
+  .interest-item input{margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--blue);}
+  .interest-item span{font-size:13.5px;color:var(--ink);font-weight:500;}
+  .interest-item:has(input:checked){background:var(--blue-tint);border-color:var(--blue);}
+
+  .upload-zone{
+    border:2px dashed var(--line);border-radius:12px;padding:22px 18px;text-align:center;
+    background:var(--bg);cursor:pointer;transition:border-color .15s ease;
+  }
+  .upload-zone:hover, .upload-zone.dragover{border-color:var(--blue);background:var(--blue-tint);}
+  .upload-zone .icon{font-size:26px;margin-bottom:6px;}
+  .upload-zone .txt{font-size:13.5px;color:var(--navy);font-weight:600;}
+  .upload-zone .sub{font-size:12px;color:var(--grey);margin-top:4px;}
+  .upload-zone input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+  .file-selected{display:none;align-items:center;gap:10px;background:var(--green-tint);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px;color:var(--navy);font-weight:600;}
+  .file-selected .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-selected .size{color:var(--grey);font-weight:500;font-size:12px;flex-shrink:0;}
+  .file-selected .remove{margin-left:auto;color:var(--red);font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;}
+
+  .confidentiality{background:var(--blue-tint);border-radius:12px;padding:14px 16px;margin:20px 0;font-size:12.5px;color:var(--navy);line-height:1.6;}
+
+  .btn{
+    width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:15px;padding:14px 28px;
+    border-radius:100px;background:var(--blue);color:var(--white);border:none;cursor:pointer;
+  }
+  .btn:hover{background:#1E4C99;}
+  .btn[disabled]{opacity:.6;cursor:default;}
+
+  .error{color:var(--red);background:var(--red-tint);border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:10px;display:none;text-align:center;}
+
+  .foot-note{text-align:center;font-size:12.5px;color:var(--grey);margin-top:18px;}
+  .section-label{font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:10px;display:block;}
+  /* Champ piège. §5.3 : display:none (et pas left:-9999px, que Safari et
+     Chrome autoremplissaient), + tabindex="-1" + autocomplete="off". */
+  .hp{display:none !important;}
+
+  .progress{display:none;margin-top:12px;}
+  .progress .bar{height:6px;border-radius:100px;background:var(--line);overflow:hidden;}
+  .progress .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .2s ease;}
+  .progress .txt{font-size:12px;color:var(--grey);margin-top:6px;text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span></div>
+    <span class="month-badge">Audit gratuit</span>
+  </div>
+</header>
+
+<div class="greeting">
+  <div class="wrap">
+    <h1>Votre audit gratuit</h1>
+    <p>Suite à notre échange, merci de nous transmettre ces quelques informations. Sous 48h, nous revenons vers vous avec votre audit et une proposition d'accompagnement sur mesure.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="form-card">
+
+      <!-- Aucun envoi natif : tout passe par fetch() vers l'Edge Function
+           Supabase, et l'écran de succès n'apparaît qu'après confirmation
+           d'écriture renvoyée par le serveur. -->
+      <form id="atlasForm" novalidate>
+
+        <input type="hidden" name="commercial" id="commercial" value="">
+        <p class="hp" style="display:none" aria-hidden="true"><label>Ne pas remplir : <input name="bot-field" id="botField" tabindex="-1" autocomplete="off"></label></p>
+
+        <div class="field">
+          <label for="garage">Nom du garage *</label>
+          <input type="text" id="garage" name="garage" required autocomplete="organization">
+        </div>
+        <div class="field">
+          <label for="dirigeant">Nom et prénom du dirigeant *</label>
+          <input type="text" id="dirigeant" name="dirigeant" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="tel">Numéro de téléphone portable *</label>
+          <input type="tel" id="tel" name="telephone" required placeholder="06 12 34 56 78" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="email">Adresse e-mail *</label>
+          <input type="email" id="email" name="email" required placeholder="contact@mongarage.fr" autocomplete="email">
+          <div class="hint">C'est à cette adresse que nous vous répondrons.</div>
+        </div>
+        <div class="field">
+          <label for="salaries">Nombre de salariés *</label>
+          <input type="number" id="salaries" name="salaries" min="0" required inputmode="numeric">
+        </div>
+
+        <div class="field">
+          <span class="section-label">Qu'est-ce qui vous intéresse le plus ? *</span>
+          <div class="interest-list">
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Avoir un vrai suivi mensuel de son expert-comptable">
+              <span>Avoir un vrai suivi mensuel de son expert-comptable</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Avoir un expert-comptable plus réactif">
+              <span>Avoir un expert-comptable plus réactif</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Savoir où mon garage peut économiser et combien">
+              <span>Savoir où mon garage peut économiser, et combien</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Diminuer légalement mes prélèvements Urssaf et fiscaux">
+              <span>Diminuer légalement mes prélèvements Urssaf et fiscaux</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Sécuriser l'atelier et les éléments juridiques en cas de contrôle">
+              <span>Sécuriser l'atelier et les éléments juridiques en cas de contrôle</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Développer davantage mes activités">
+              <span>Développer davantage mes activités</span>
+            </label>
+            <label class="interest-item">
+              <input type="checkbox" name="interet" value="Obtenir plus de chiffre d'affaires chaque mois">
+              <span>Obtenir plus de chiffre d'affaires chaque mois</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="section-label">Votre dernier bilan comptable</span>
+          <div class="hint" style="margin:-4px 0 10px">Facultatif — vous pouvez nous l'envoyer plus tard, mais le joindre maintenant nous permet de chiffrer votre situation réelle dès le premier retour.</div>
+          <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Joindre votre bilan comptable">
+            <div class="icon">📎</div>
+            <div class="txt">Cliquez ou déposez votre fichier ici</div>
+            <div class="sub">PDF de préférence — une photo lisible convient si vous n'avez que le papier. 20 Mo maximum.</div>
+            <input type="file" id="bilanFile" name="bilan" accept="application/pdf,image/*">
+          </div>
+          <div class="file-selected" id="fileSelected">
+            <span>📄</span>
+            <span class="name" id="fileName"></span>
+            <span class="size" id="fileSize"></span>
+            <span class="remove" id="removeFile">Retirer</span>
+          </div>
+        </div>
+
+        <div class="confidentiality">
+          🔒 <b>Confidentialité :</b> vos informations et votre bilan sont transmis à ATLAS × Etchecom et conservés de façon sécurisée uniquement pour préparer votre accompagnement. Ils ne sont ni revendus ni transmis à des fins commerciales. Vous pouvez en demander la suppression à tout moment.
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Envoyer mes informations</button>
+        <div class="progress" id="progress" aria-live="polite">
+          <div class="bar"><i id="progressBar"></i></div>
+          <div class="txt" id="progressTxt"></div>
+        </div>
+        <div class="error" id="formError" role="alert"></div>
+      </form>
+
+    </div>
+    <p class="foot-note">ATLAS × Etchecom — Comptabilité réservée aux garagistes</p>
+  </div>
+</section>
+
+<script>
+/* ------------------------------------------------------------------------
+   ATLAS — envoi du formulaire vers Supabase.
+
+   Principes hérités des bugs déjà payés (§5 du brief) :
+   · l'input fichier est masqué en CSS, donc JAMAIS d'attribut `required`
+     dessus : la validation se fait ici, en JavaScript ;
+   · le champ piège reste en display:none / tabindex=-1 / autocomplete=off,
+     et c'est le SERVEUR qui journalise le rejet, pas le navigateur ;
+   · aucune navigation avant la réponse du serveur : si l'envoi échoue,
+     l'utilisateur reste sur sa saisie, intacte, avec une erreur explicite.
+------------------------------------------------------------------------- */
+
+// ⚠️ À REMPLACER par l'URL de votre projet Supabase (cf. README, étape 6).
+var API = 'https://VOTRE-PROJET.supabase.co/functions/v1/lead';
+
+var MAX_OCTETS = 20 * 1024 * 1024;
+
+var form         = document.getElementById('atlasForm');
+var uploadZone   = document.getElementById('uploadZone');
+var fileInput    = document.getElementById('bilanFile');
+var fileSelected = document.getElementById('fileSelected');
+var fileNameEl   = document.getElementById('fileName');
+var fileSizeEl   = document.getElementById('fileSize');
+var errorEl      = document.getElementById('formError');
+var submitBtn    = document.getElementById('submitBtn');
+var progress     = document.getElementById('progress');
+var progressBar  = document.getElementById('progressBar');
+var progressTxt  = document.getElementById('progressTxt');
+
+var ouvertureLe = Date.now();          // sert au contrôle « rempli en moins de 3 s »
+var envoiEnCours = false;
+
+// Identifie le commercial qui a transmis le lien : .../?c=DUPONT
+var params = new URLSearchParams(window.location.search);
+document.getElementById('commercial').value = params.get('c') || params.get('commercial') || '';
+
+/* ------------------------------------------------------------- affichage */
+
+function showError(msg){
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+  errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function clearError(){ errorEl.style.display = 'none'; }
+
+function setProgress(pct, texte){
+  progress.style.display = 'block';
+  progressBar.style.width = pct + '%';
+  progressTxt.textContent = texte;
+}
+function hideProgress(){ progress.style.display = 'none'; progressBar.style.width = '0'; }
+
+function formatSize(bytes){
+  return bytes < 1024 * 1024
+    ? Math.round(bytes / 1024) + ' Ko'
+    : (bytes / 1024 / 1024).toFixed(1).replace('.', ',') + ' Mo';
+}
+
+function verrouiller(actif, libelle){
+  envoiEnCours = actif;
+  submitBtn.disabled = actif;
+  submitBtn.textContent = libelle;
+}
+
+/* ------------------------------------------------------- choix du fichier */
+
+function resetFile(){
+  fileInput.value = '';
+  fileSelected.style.display = 'none';
+  uploadZone.style.display = 'block';
+}
+
+/* Contrôle du type RÉEL par les octets d'en-tête, avant même de téléverser.
+   Le serveur refait exactement la même vérification : celle-ci n'est là que
+   pour éviter au garagiste d'envoyer 12 Mo pour rien. */
+function lireTypeReel(file){
+  return new Promise(function(resolve){
+    var fr = new FileReader();
+    fr.onerror = function(){ resolve(null); };
+    fr.onload = function(){
+      var o = new Uint8Array(fr.result);
+      var a = function(i){
+        var oct = [].slice.call(arguments, 1);
+        return oct.every(function(v, k){ return o[i + k] === v; });
+      };
+      if(a(0, 0x25,0x50,0x44,0x46,0x2d)) return resolve('application/pdf');
+      if(a(0, 0xff,0xd8,0xff)) return resolve('image/jpeg');
+      if(a(0, 0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a)) return resolve('image/png');
+      if(a(4, 0x66,0x74,0x79,0x70)){
+        var marque = String.fromCharCode(o[8],o[9],o[10],o[11]);
+        if(['heic','heix','hevc','heim','heis','hevm','hevs','mif1','msf1'].indexOf(marque) !== -1){
+          return resolve('image/heic');
+        }
+      }
+      resolve(null);
+    };
+    fr.readAsArrayBuffer(file.slice(0, 64));
+  });
+}
+
+function handleFile(file){
+  if(file.size > MAX_OCTETS){
+    resetFile();
+    showError('Ce fichier fait ' + formatSize(file.size) + '. La limite est de 20 Mo — compressez-le ou envoyez seulement les pages du bilan.');
+    return;
+  }
+  lireTypeReel(file).then(function(type){
+    if(!type){
+      resetFile();
+      showError('Ce fichier n’est ni un PDF ni une image. Envoyez votre bilan en PDF, ou une photo lisible.');
+      return;
+    }
+    clearError();
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatSize(file.size);
+    fileSelected.style.display = 'flex';
+    uploadZone.style.display = 'none';
+  });
+}
+
+uploadZone.addEventListener('click', function(){ fileInput.click(); });
+uploadZone.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); }
+});
+uploadZone.addEventListener('dragover', function(e){ e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', function(){ uploadZone.classList.remove('dragover'); });
+uploadZone.addEventListener('drop', function(e){
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if(e.dataTransfer.files.length){
+    fileInput.files = e.dataTransfer.files;
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+fileInput.addEventListener('change', function(){
+  if(fileInput.files.length) handleFile(fileInput.files[0]);
+});
+document.getElementById('removeFile').addEventListener('click', function(e){
+  e.stopPropagation();
+  resetFile();
+  clearError();
+});
+
+/* ------------------------------------------------------------- transport */
+
+/* Android renvoie parfois un type MIME vide : on le déduit de l'extension.
+   La vérification par les octets, côté serveur, reste seule maîtresse. */
+function typeDeclare(file){
+  if(file.type) return file.type;
+  var table = { pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg',
+                png:'image/png', heic:'image/heic', heif:'image/heic' };
+  return table[(file.name.split('.').pop() || '').toLowerCase()] || 'application/pdf';
+}
+
+function postJson(url, corps){
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(corps)
+  }).then(function(r){
+    return r.json().catch(function(){ return {}; }).then(function(data){
+      return { ok: r.ok, status: r.status, data: data };
+    });
+  });
+}
+
+/* XHR plutôt que fetch : c'est le seul moyen d'afficher une progression
+   d'envoi, et 12 Mo sur le réseau d'un atelier, ça se voit passer. */
+function televerser(url, file){
+  return new Promise(function(resolve, reject){
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', url, true);
+    xhr.setRequestHeader('content-type', typeDeclare(file));
+    xhr.upload.onprogress = function(e){
+      if(e.lengthComputable){
+        var pct = Math.round(e.loaded / e.total * 92);
+        setProgress(pct, 'Envoi de votre bilan… ' + pct + ' %');
+      }
+    };
+    xhr.onload = function(){
+      if(xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error('storage ' + xhr.status));
+    };
+    xhr.onerror = function(){ reject(new Error('reseau')); };
+    xhr.ontimeout = function(){ reject(new Error('reseau')); };
+    xhr.send(file);
+  });
+}
+
+/* ---------------------------------------------------------------- envoi */
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();                       // aucun envoi natif, jamais
+  if(envoiEnCours) return;
+  clearError();
+
+  // Validation native déclenchée à la main (le formulaire est en novalidate
+  // pour que l'input fichier masqué ne bloque jamais l'envoi en silence).
+  if(!form.checkValidity()){
+    form.reportValidity();
+    return;
+  }
+
+  var interets = [].map.call(
+    document.querySelectorAll('input[name="interet"]:checked'),
+    function(i){ return i.value; }
+  );
+  if(interets.length === 0){
+    showError('Sélectionnez au moins un centre d’intérêt.');
+    return;
+  }
+
+  var file = fileInput.files[0] || null;    // le bilan est FACULTATIF
+  if(file && file.size > MAX_OCTETS){
+    showError('Le fichier dépasse 20 Mo.');
+    return;
+  }
+
+  var donnees = {
+    garage:         document.getElementById('garage').value.trim(),
+    dirigeant:      document.getElementById('dirigeant').value.trim(),
+    telephone:      document.getElementById('tel').value.trim(),
+    email:          document.getElementById('email').value.trim(),
+    salaries:       Number(document.getElementById('salaries').value),
+    interet:        interets,
+    commercial:     document.getElementById('commercial').value,
+    'bot-field':    document.getElementById('botField').value,
+    remplissage_ms: Date.now() - ouvertureLe
+  };
+
+  verrouiller(true, 'Envoi en cours…');
+  setProgress(file ? 2 : 40, file ? 'Préparation de l’envoi…' : 'Envoi de vos informations…');
+
+  var etape = file
+    ? postJson(API + '/upload-url', { taille: file.size, type: typeDeclare(file) })
+        .then(function(r){
+          if(!r.ok) throw { message: r.data.erreur };
+          return televerser(r.data.url, file).then(function(){
+            setProgress(95, 'Enregistrement…');
+            donnees.bilan_chemin    = r.data.chemin;
+            donnees.bilan_signature = r.data.signature;
+            donnees.bilan_nom       = file.name;
+          });
+        })
+    : Promise.resolve();
+
+  etape
+    .then(function(){ return postJson(API, donnees); })
+    .then(function(r){
+      // §5.5 : l'écran de succès ne s'affiche QUE sur confirmation serveur.
+      if(r.ok && r.data && r.data.ok){
+        setProgress(100, 'Informations reçues.');
+        window.location.replace('/merci/?ref=' + encodeURIComponent(r.data.reference || ''));
+        return;
+      }
+      throw { message: (r.data && r.data.erreur) || null };
+    })
+    .catch(function(err){
+      hideProgress();
+      verrouiller(false, 'Envoyer mes informations');
+      // Le message du serveur prime ; sinon on suppose une coupure réseau.
+      // Dans tous les cas la saisie reste à l'écran : rien n'est perdu.
+      showError(
+        (err && err.message) ||
+        'Vos informations n’ont pas pu être envoyées — connexion interrompue. ' +
+        'Rien n’est perdu : vérifiez votre réseau et appuyez à nouveau sur Envoyer.'
+      );
+    });
+});
+</script>
+
+</body>
+</html>

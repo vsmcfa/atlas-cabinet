@@ -1,0 +1,12 @@
+# Configuration du site ADMIN (dossier admin/), déployé SÉPARÉMENT
+# sur son propre site Netlify — c'est le cloisonnement demandé.
+[build]
+  publish = "admin"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"

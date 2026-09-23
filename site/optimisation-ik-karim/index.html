@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATLAS — Optimisation indemnités kilométriques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16305C;
+    --blue:#2A5FBF;
+    --blue-tint:#EAF2FC;
+    --bg:#FAFBFD;
+    --green:#1E9E6B;
+    --green-tint:#E7F7F0;
+    --red:#C0392B;
+    --red-tint:#FBEAE8;
+    --amber:#B7791F;
+    --ink:#202B3D;
+    --grey:#66707F;
+    --line:#EDF0F5;
+    --white:#FFFFFF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px;}
+
+  header{background:var(--navy);padding:24px 0;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:24px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .month-badge{background:var(--blue);color:var(--white);font-weight:700;font-size:13px;letter-spacing:0.5px;padding:8px 16px;border-radius:100px;}
+
+  .greeting{background:var(--white);padding:26px 0 22px;border-bottom:1px solid var(--line);}
+  .greeting h1{font-size:20px;margin-bottom:6px;}
+  .greeting .name{color:var(--blue);}
+  .greeting p{color:var(--grey);font-size:14.5px;max-width:640px;}
+  .demo-tag{display:inline-block;margin-top:12px;background:var(--blue-tint);color:var(--blue);font-size:11.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:5px 12px;border-radius:100px;}
+
+  section{padding:26px 0 0;}
+  .section-head{margin-bottom:14px;}
+  .section-head h2{font-size:16.5px;}
+  .section-head p{color:var(--grey);font-size:13px;margin-top:3px;}
+
+  /* ===== IDENTITY CARD ===== */
+  .id-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .id-item .lab{font-size:11.5px;color:var(--grey);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
+  .id-item .val{font-size:14px;font-weight:700;color:var(--navy);margin-top:2px;}
+
+  /* ===== COMPARISON ===== */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .compare-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .compare-card.before{border-color:var(--red);}
+  .compare-card.after{border-color:var(--green);background:var(--green-tint);}
+  .compare-tag{font-size:11.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;display:block;}
+  .compare-card.before .compare-tag{color:var(--red);}
+  .compare-card.after .compare-tag{color:var(--green);}
+  .compare-line{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line);}
+  .compare-line:last-of-type{border-bottom:none;}
+  .compare-line .v{font-weight:700;}
+  .compare-total{font-family:'Poppins',sans-serif;font-weight:800;font-size:22px;margin-top:10px;}
+  .compare-card.before .compare-total{color:var(--red);}
+  .compare-card.after .compare-total{color:var(--green);}
+  .saving-band{background:var(--navy);border-radius:14px;padding:16px 20px;text-align:center;margin-top:14px;}
+  .saving-band .lab{color:#9FC1F8;font-size:12.5px;font-weight:600;}
+  .saving-band .num{font-family:'Poppins',sans-serif;font-weight:800;font-size:24px;color:var(--white);margin-top:4px;}
+
+  /* ===== TRIP LOG TABLE ===== */
+  .trip-table{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:13px;}
+  .trip-table th{background:var(--blue-tint);color:var(--navy);font-weight:700;text-align:left;padding:10px 12px;font-size:12px;}
+  .trip-table td{padding:9px 12px;border-top:1px solid var(--line);color:var(--ink);}
+  .trip-table td.num{text-align:right;font-weight:700;color:var(--navy);white-space:nowrap;}
+  .trip-table tfoot td{font-weight:800;color:var(--navy);border-top:2px solid var(--blue);background:var(--blue-tint);}
+
+  .doc-link{display:inline-block;margin-top:14px;font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none;}
+  .doc-link:hover{text-decoration:underline;}
+
+  .note-box{background:var(--blue-tint);border-radius:12px;padding:14px 18px;font-size:12.5px;color:var(--navy);margin-top:14px;line-height:1.6;}
+  .note-box b{color:var(--blue);}
+
+  .expert-line{background:var(--white);border:2px solid var(--blue-tint);border-radius:14px;padding:16px 20px;font-size:14px;color:var(--ink);display:flex;gap:12px;align-items:flex-start;margin-top:16px;}
+  .expert-line .av{width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--white);font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .cta-band{padding:26px 0 40px;text-align:center;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;padding:13px 26px;border-radius:100px;background:var(--blue);color:var(--white);border:none;cursor:pointer;text-decoration:none;}
+
+  @media (max-width:640px){
+    .id-card{grid-template-columns:1fr;}
+    .compare-grid{grid-template-columns:1fr;}
+    .trip-table{font-size:11.5px;}
+    .trip-table th, .trip-table td{padding:7px 8px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span></div>
+    <span class="month-badge">Août 2026</span>
+  </div>
+</header>
+
+<div class="greeting">
+  <div class="wrap">
+    <h1><span class="name">Garage JSB Auto</span> — Optimisation indemnités kilométriques</h1>
+    <p>Un exemple concret sur votre technicien Karim : comment réduire le coût employeur sans toucher à son salaire net, avec le justificatif complet en cas de contrôle URSSAF.</p>
+    <span class="demo-tag">Exemple de démonstration</span>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="id-card">
+      <div class="id-item"><div class="lab">Salarié</div><div class="val">Karim — Technicien confirmé</div></div>
+      <div class="id-item"><div class="lab">Véhicule personnel déclaré</div><div class="val">Peugeot 308 — 5 CV</div></div>
+      <div class="id-item"><div class="lab">Kilométrage professionnel du mois</div><div class="val">1 859 km</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Ce que ça change sur le coût employeur</h2>
+      <p>Même somme versée à Karim — traitée différemment sur le plan social</p>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card before">
+        <span class="compare-tag">Sans optimisation</span>
+        <div class="compare-line"><span>Salaire brut nécessaire pour le même net</span><span class="v">1 018 €</span></div>
+        <div class="compare-line"><span>Charges salariales (retenues sur le brut)</span><span class="v">− 224 €</span></div>
+        <div class="compare-line"><span>Charges patronales (≈42% du brut)</span><span class="v">+ 428 €</span></div>
+        <div class="compare-line"><span>Net perçu par Karim</span><span class="v">794 €</span></div>
+        <div class="compare-total">1 445 € coût employeur</div>
+      </div>
+      <div class="compare-card after">
+        <span class="compare-tag">Avec optimisation ATLAS</span>
+        <div class="compare-line"><span>Indemnités kilométriques versées</span><span class="v">794 €</span></div>
+        <div class="compare-line"><span>Charges patronales</span><span class="v">0 €</span></div>
+        <div class="compare-line"><span>Charges salariales et impôt</span><span class="v">0 €</span></div>
+        <div class="compare-line"><span>Net perçu par Karim</span><span class="v">794 €</span></div>
+        <div class="compare-total">794 € coût employeur</div>
+      </div>
+    </div>
+    <div class="saving-band">
+      <div class="lab">ÉCONOMIE RÉALISÉE SUR CE SEUL SALARIÉ — À NET IDENTIQUE POUR KARIM</div>
+      <div class="num">651 €/mois — soit environ 7 818 €/an</div>
+    </div>
+    <div class="note-box">
+      <b>Base légale :</b> barème kilométrique fiscal 2026, véhicule 5 CV. Compte tenu du kilométrage professionnel de Karim (plus de 20 000 km par an, trajets fournisseurs et domicile-garage inclus), le taux applicable est de 0,427 €/km. Les indemnités sont exonérées de cotisations sociales et d'impôt sur le revenu, à la stricte condition de pouvoir justifier la puissance fiscale du véhicule, le kilométrage réel et le motif de chaque trajet — exactement ce que le détail ci-dessous permet.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Le détail de ses déplacements — Août 2026</h2>
+      <p>Ce que nous conservons chaque mois pour justifier le montant versé, par type de trajet</p>
+    </div>
+
+    <table class="trip-table">
+      <thead>
+        <tr><th>Type de trajet</th><th>Fréquence</th><th>Distance A/R</th><th style="text-align:right;">Total du mois</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Fournisseur de pièces A</b><br><span style="color:var(--grey);font-weight:400;">Garage → Autodistribution Gennevilliers</span></td><td>Quotidien — 22 jours</td><td>8 km</td><td class="num">176 km</td></tr>
+        <tr><td><b>Fournisseur de pièces B</b><br><span style="color:var(--grey);font-weight:400;">Garage → Fournisseur Nanterre</span></td><td>Quotidien — 22 jours</td><td>10 km</td><td class="num">220 km</td></tr>
+        <tr><td><b>Domicile → Garage</b><br><span style="color:var(--grey);font-weight:400;">Trajet personnel de Karim</span></td><td>Quotidien — 22 jours</td><td>24 km</td><td class="num">528 km</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3">Sous-total trajets quotidiens</td><td class="num">924 km</td></tr>
+      </tfoot>
+    </table>
+
+    <div class="note-box" style="margin-top:12px;">
+      Le trajet domicile-garage est ici pris en charge car Karim n'a pas de solution de transport en commun adaptée à ses horaires d'atelier (prise de poste à 7h30) — une condition à documenter pour rester dans les clous.
+    </div>
+
+    <table class="trip-table" style="margin-top:20px;">
+      <thead>
+        <tr><th>Date</th><th>Motif</th><th>Trajet</th><th style="text-align:right;">Distance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>07/08</td><td>Déplacement en concession</td><td>Garage → Concession Peugeot, Cergy (A/R)</td><td class="num">220 km</td></tr>
+        <tr><td>13/08</td><td>Déplacement en concession</td><td>Garage → Concession Renault, Poissy (A/R)</td><td class="num">180 km</td></tr>
+        <tr><td>18/08</td><td>Déplacement en concession</td><td>Garage → Concession Citroën, Versailles (A/R)</td><td class="num">165 km</td></tr>
+        <tr><td>23/08</td><td>Déplacement en concession</td><td>Garage → Concession Peugeot, Rambouillet (A/R)</td><td class="num">190 km</td></tr>
+        <tr><td>29/08</td><td>Déplacement en concession</td><td>Garage → Concession Renault, Mantes-la-Jolie (A/R)</td><td class="num">180 km</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3">Sous-total déplacements en concession</td><td class="num">935 km</td></tr>
+      </tfoot>
+    </table>
+
+    <table class="trip-table" style="margin-top:20px;">
+      <tfoot>
+        <tr><td style="font-size:14px;">Total kilométrage professionnel — Août 2026</td><td class="num" style="font-size:15px;">1 859 km</td></tr>
+      </tfoot>
+    </table>
+
+    <a href="#" class="doc-link">Télécharger le justificatif complet (PDF) →</a>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="expert-line">
+      <span class="av">A</span>
+      <span>« Ce document, on le tient à jour chaque mois pour chacun de vos techniciens qui se déplace. Le jour où l'URSSAF regarde de plus près, vous n'avez rien à chercher : tout est déjà là, daté et justifié. »</span>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <div class="wrap">
+    <a class="btn" href="/">Demander mon audit de rémunération gratuit</a>
+  </div>
+</div>
+
+<script>
+  // conserve l'identifiant commercial (?c=DUPONT) en passant au formulaire
+  (function(){
+    var qs = window.location.search;
+    if(!qs) return;
+    var links = document.querySelectorAll('a.btn');
+    for (var i = 0; i < links.length; i++){
+      links[i].setAttribute('href', links[i].getAttribute('href') + qs);
+    }
+  })();
+</script>
+
+</body>
+</html>

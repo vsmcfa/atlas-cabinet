@@ -1,0 +1,12 @@
+# Configuration du site PROSPECT (dossier site/).
+# À renommer netlify.toml et placer à la racine du dossier publié, ou à
+# configurer directement dans l'interface Netlify.
+[build]
+  publish = "site"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

@@ -1,0 +1,4 @@
+{
+  "_commentaire": "Le package.json à la racine ne sert qu'à la CLI Supabase. Sans cette ligne, Deno tente de résoudre les dépendances des Edge Functions dans node_modules et échoue.",
+  "nodeModulesDir": "none"
+}

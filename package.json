@@ -1,0 +1,16 @@
+{
+  "name": "atlas",
+  "version": "1.0.0",
+  "description": "Remplace Netlify Forms par un backend Supabase. Le site statique **reste sur Netlify, au même endroit** : les quatre URL de démonstration déjà diffusées ne bougent pas d'un octet.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "supabase": "^2.117.0"
+  }
+}

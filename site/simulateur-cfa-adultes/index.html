@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Simulateur CFA Adultes</title>
+<style>
+:root{
+  --navy:#0E2A47;
+  --navy-2:#1B3F66;
+  --navy-soft:#F2F5F9;
+  --line:#DFE6EE;
+  --ink:#0E2A47;
+  --muted:#51647A;
+  --green:#0B7A4B;
+  --green-2:#0F9159;
+  --green-soft:#E9F6EF;
+  --amber:#9A6100;
+  --amber-soft:#FFF6E6;
+  --white:#fff;
+  --r:14px;
+  --sans:'Inter','SF Pro Text',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background:var(--white);
+  font-size:17px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.03em;font-weight:800}
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px 64px}
+
+/* ---------- Header : bandeau marine + graduation compteur ---------- */
+header.top{
+  background:var(--navy);color:#fff;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 0;
+}
+.top-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand small{display:block;font-weight:400;font-size:12.5px;opacity:.7;letter-spacing:.01em}
+.top-actions{margin-left:auto;display:flex;gap:8px}
+.icon-btn{
+  background:rgba(255,255,255,.10);border:0;color:#fff;border-radius:10px;
+  width:40px;height:40px;font-size:17px;cursor:pointer;display:grid;place-items:center
+}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.ticks{height:14px;margin-top:12px;background:
+  repeating-linear-gradient(to right,rgba(255,255,255,.55) 0 1px,transparent 1px 14px) bottom/100% 6px no-repeat;
+  opacity:.5}
+
+/* ---------- Formulaire ---------- */
+h1{font-size:26px;line-height:1.15;margin:26px 0 4px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 22px;font-size:15px}
+fieldset{border:0;padding:0;margin:0 0 22px}
+legend{
+  font-size:13px;font-weight:700;color:var(--navy-2);
+  padding:0 0 10px;letter-spacing:.02em
+}
+.grid{display:grid;gap:14px}
+@media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}}
+label{display:block;font-size:14px;font-weight:600;margin:0 0 6px;color:var(--navy-2)}
+label .opt{font-weight:400;color:var(--muted)}
+input,select{
+  width:100%;font:inherit;font-size:17px;color:var(--ink);
+  padding:14px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+  appearance:none
+}
+select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' stroke='%230E2A47' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center}
+input:focus,select:focus{outline:3px solid #B9D2EE;outline-offset:0;border-color:var(--navy-2)}
+.hero-f{margin:0 0 18px}
+.hero-f label{font-size:16px;margin-bottom:8px}
+.hero-f input{font-size:30px;font-weight:700;padding:18px 44px 18px 16px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hero-f input::placeholder{color:#C3CEDA;font-weight:600}
+.hero-f .euro::after{font-size:22px;right:16px}
+.more{border-top:1px solid var(--line);padding:14px 0 4px;margin:0 0 22px}
+.more summary{font-size:14.5px;font-weight:600;color:var(--navy-2);cursor:pointer;list-style:none}
+.more summary::-webkit-details-marker{display:none}
+.more summary::before{content:"+ ";font-weight:700}
+.more[open] summary::before{content:"– "}
+.euro{position:relative}
+.euro input{padding-right:38px}
+.euro::after{content:"€";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.btn{
+  display:block;width:100%;font:inherit;font-weight:700;font-size:17px;
+  padding:18px;border-radius:14px;border:0;cursor:pointer;text-align:center
+}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-2)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-2)}
+.btn-ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+.btn-ghost:hover{border-color:var(--navy-2)}
+.btn+.btn{margin-top:10px}
+.err{color:#B00020;font-size:14px;margin-top:10px}
+
+/* ---------- Résultat ---------- */
+.cols{display:grid;gap:12px;margin:6px 0 12px}
+@media(min-width:720px){.cols{grid-template-columns:1fr 1fr;gap:16px}}
+.col{border:1.5px solid var(--line);border-radius:var(--r);padding:20px;background:#fff}
+.col.now{background:#F4F7FA;border-color:#D7E0E9}
+.col.cfa{border:2.5px solid var(--navy)}
+.col h2{font-size:14px;font-weight:800;margin:0 0 2px;color:var(--navy);letter-spacing:.03em}
+.col p.lab{margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+.big{font-size:40px;line-height:1}
+@media(min-width:720px){.big{font-size:46px}}
+.per{font-size:14px;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:0}
+.detail{margin:16px 0 0;padding:0;list-style:none;font-size:14.5px}
+.detail li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid #D7E0E9}
+.detail li span:first-child{color:#3C5068}
+.detail li span:last-child{font-variant-numeric:tabular-nums;color:var(--navy);font-weight:700;white-space:nowrap}
+.col.now .detail li{border-color:#DCE4EC}
+.col.cfa .detail li:first-child span{color:var(--green);font-weight:700}
+
+.save{
+  position:relative;overflow:hidden;
+  background:var(--green);color:#fff;border-radius:18px;padding:28px 22px;text-align:center;margin:4px 0 18px
+}
+.save::before{ /* graduation type compteur, discrète */
+  content:"";position:absolute;left:0;right:0;bottom:0;height:10px;
+  background:repeating-linear-gradient(to right,rgba(255,255,255,.5) 0 1px,transparent 1px 16px);opacity:.4
+}
+.save h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;opacity:.9}
+.save .amount{font-size:60px;line-height:1;margin:10px 0 0}
+@media(min-width:720px){.save .amount{font-size:84px}}
+.save .unit{font-size:20px;font-weight:700;opacity:.9;letter-spacing:0}
+.save .year{margin:12px 0 0;font-size:19px;font-weight:600;opacity:.95}
+.save .year b{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.save.pending .amount{font-size:30px;line-height:1.2}
+.save.pending{background:var(--navy-2)}
+
+.netkeep{background:var(--green-soft);border:1.5px solid #BFE3D0;border-radius:var(--r);padding:14px 16px;margin:0 0 18px;font-size:15.5px;text-align:center;color:var(--green);font-weight:600}
+.perks{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:1px;background:var(--line);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.perks li{background:#fff;padding:14px 16px 14px 44px;position:relative;font-size:15.5px}
+.perks li::before{
+  content:"";position:absolute;left:16px;top:19px;width:13px;height:8px;
+  border-left:2.5px solid var(--green);border-bottom:2.5px solid var(--green);transform:rotate(-45deg)
+}
+.flag{
+  background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:12px 14px;
+  font-size:14px;margin:0 0 14px
+}
+.flag ul{margin:6px 0 0;padding-left:18px}
+.legal{font-size:12px;color:var(--muted);line-height:1.5;margin:18px 0 26px}
+
+/* ---------- Écran 3 ---------- */
+.cta{border:2px solid var(--navy);border-radius:var(--r);padding:22px;margin:0 0 18px;text-align:center}
+.cta h2{margin:0 0 16px;font-size:21px;letter-spacing:-.01em}
+.done{background:var(--green-soft);border:1.5px solid #BFE3D0;border-radius:var(--r);padding:22px;text-align:center}
+.done h2{margin:0 0 6px;color:var(--green);font-size:20px}
+
+/* ---------- Admin ---------- */
+.admin h1{margin-top:22px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 18px;padding-bottom:4px}
+.tab{white-space:nowrap;font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:99px;border:1.5px solid var(--line);background:#fff;color:var(--navy-2);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.card{border:1.5px solid var(--line);border-radius:var(--r);padding:18px;margin:0 0 16px}
+.card h3{margin:0 0 4px;font-size:16px}
+.card .hint{margin:0 0 16px;font-size:13.5px;color:var(--muted)}
+.hint-s{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:0 6px 8px 0}
+td{padding:0 6px 8px 0;vertical-align:top}
+td input,td select{padding:10px;font-size:15px}
+.row-del{background:#fff;border:1.5px solid var(--line);border-radius:10px;width:38px;height:42px;cursor:pointer;color:#B00020;font-size:17px}
+.mini{font:inherit;font-size:14px;font-weight:600;padding:10px 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--navy);cursor:pointer}
+.mini+.mini{margin-left:8px}
+.mini.danger{color:#B00020}
+textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:12px;border:1.5px solid var(--line);border-radius:12px;min-height:220px}
+.saved{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 20px;border-radius:99px;font-size:14.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.saved.on{opacity:1}
+.leads{font-size:14px}
+.leads .lead{border-top:1px solid var(--line);padding:12px 0}
+.leads .lead b{display:block}
+.leads .lead span{color:var(--muted);font-size:13px}
+
+.screen{display:none}
+.screen.on{display:block}
+.backlink{background:none;border:0;font:inherit;font-size:14.5px;font-weight:600;color:var(--navy-2);padding:16px 0;cursor:pointer}
+
+/* ---------- Impression / PDF A4 ---------- */
+#print{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{font-size:11pt}
+  .app,.saved{display:none!important}
+  #print{display:block}
+  #print h1{font-size:19pt;margin:0 0 2mm}
+  #print .p-head{border-bottom:2.5pt solid var(--navy);padding-bottom:3mm;margin-bottom:5mm}
+  #print .p-sub{color:#555;font-size:10pt;margin:0}
+  #print .p-two{display:flex;gap:6mm;margin:0 0 5mm}
+  #print .p-box{flex:1;border:1pt solid #bbb;border-radius:2mm;padding:4mm}
+  #print .p-box h2{font-size:9pt;margin:0 0 2mm;letter-spacing:.04em}
+  #print .p-box .v{font-size:20pt;font-weight:800}
+  #print .p-save{border:2.5pt solid var(--green);border-radius:2mm;padding:5mm;text-align:center;margin:0 0 5mm}
+  #print .p-save h2{font-size:10pt;margin:0;letter-spacing:.06em;color:var(--green)}
+  #print .p-save .v{font-size:34pt;font-weight:800;color:var(--green);line-height:1.1}
+  #print .p-save .y{font-size:12pt;font-weight:600}
+  #print ul{margin:0 0 5mm;padding-left:5mm}
+  #print li{margin-bottom:1.5mm}
+  #print .p-info{width:100%;font-size:10pt;margin:0 0 5mm}
+  #print .p-info td{padding:1.5mm 0;border-bottom:.5pt solid #ddd}
+  #print .p-info td:first-child{color:#555;width:45%}
+  #print .p-foot{border-top:1pt solid #bbb;padding-top:3mm;font-size:9pt;color:#555}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+<header class="top">
+  <div class="top-in">
+    <div class="brand">Simulateur CFA Adultes<small id="brandSub">Coût réel d'un salarié en formation</small></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnHome" title="Nouvelle simulation" aria-label="Nouvelle simulation">↺</button>
+      <button class="icon-btn" id="btnAdmin" title="Paramètres" aria-label="Paramètres">⚙</button>
+    </div>
+  </div>
+  <div class="ticks"></div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ ÉCRAN 1 ============ -->
+<section class="screen on" id="s1">
+  <h1>Combien coûte votre salarié aujourd'hui ?</h1>
+  <p class="sub">Un chiffre à saisir, un chiffre à montrer.</p>
+
+  <div class="hero-f">
+    <label for="f_net">Salaire net mensuel du salarié</label>
+    <div class="euro"><input id="f_net" type="number" inputmode="decimal" min="0" step="10" placeholder="1 600"></div>
+    <p class="hint-s">Seule information nécessaire. Le reste est calculé.</p>
+  </div>
+
+  <details class="more">
+    <summary>Détails (facultatif)</summary>
+    <div class="grid two" style="margin-top:14px">
+      <div><label for="f_garage">Nom du garage</label><input id="f_garage" autocomplete="organization"></div>
+      <div><label for="f_prenom">Prénom du salarié</label><input id="f_prenom"></div>
+      <div><label for="f_age">Âge</label><input id="f_age" type="number" inputmode="numeric" min="15" max="70"></div>
+      <div><label for="f_poste">Poste</label>
+        <select id="f_poste">
+          <option value="">—</option>
+          <option>Mécanicien</option><option>Carrossier</option><option>Peintre automobile</option>
+          <option>Technicien électronicien</option><option>Réceptionnaire</option>
+          <option>Magasinier / pièces</option><option>Aide / manœuvre atelier</option><option>Autre</option>
+        </select>
+      </div>
+      <div><label for="f_contrat">Contrat actuel</label><select id="f_contrat"></select></div>
+      <div><label for="f_effectif">Effectif</label>
+        <select id="f_effectif">
+          <option value="pme">Moins de 250 salariés</option>
+          <option value="ge">250 salariés et plus</option>
+        </select>
+      </div>
+      <div><label for="f_brut">Salaire brut mensuel <span class="opt">— si connu</span></label><div class="euro"><input id="f_brut" type="number" inputmode="decimal" min="0" step="10"></div></div>
+    </div>
+  </details>
+
+  <button class="btn btn-primary" id="btnCalc">CALCULER MON ÉCONOMIE</button>
+  <p class="err" id="err1" hidden></p>
+</section>
+
+<!-- ============ ÉCRAN 2 ============ -->
+<section class="screen" id="s2">
+  <h1 id="r_title">Votre garage</h1>
+  <p class="sub" id="r_sub"></p>
+
+  <div id="r_flags"></div>
+
+  <div class="cols">
+    <div class="col now">
+      <h2>AUJOURD'HUI</h2>
+      <p class="lab">Coût mensuel estimé pour l'entreprise</p>
+      <div class="num big" id="r_now">—</div>
+      <ul class="detail" id="r_now_d"></ul>
+    </div>
+    <div class="col cfa">
+      <h2>AVEC LE CFA ADULTES</h2>
+      <p class="lab">Coût mensuel estimé pour l'entreprise</p>
+      <div class="num big" id="r_cfa">—</div>
+      <ul class="detail" id="r_cfa_d"></ul>
+    </div>
+  </div>
+
+  <div class="save" id="r_save">
+    <h2>VOTRE ÉCONOMIE</h2>
+    <div class="num amount" id="r_eco">—<span class="unit"> € / mois</span></div>
+    <p class="year">soit <b class="num" id="r_eco_an">—</b> € / an</p>
+  </div>
+
+  <p class="netkeep" id="r_netkeep" hidden></p>
+
+  <ul class="perks">
+    <li>Votre salarié conserve une activité professionnelle</li>
+    <li>Il prépare un diplôme reconnu</li>
+    <li>Formation pensée pour limiter son absence de l'entreprise</li>
+    <li>Le CFA vous accompagne dans les démarches</li>
+  </ul>
+
+  <div class="cta">
+    <h2>VOTRE SALARIÉ SEMBLE ÉLIGIBLE ?</h2>
+    <button class="btn btn-green" id="btnGoLead">FAIRE VÉRIFIER MON DOSSIER</button>
+    <button class="btn btn-ghost" id="btnPdf">Télécharger la simulation</button>
+  </div>
+
+  <p class="legal">Simulation indicative. L'éligibilité, les aides, la rémunération et le financement doivent être confirmés selon la situation du salarié et les règles applicables au moment de la contractualisation.</p>
+  <button class="backlink" data-go="s1">← Modifier les informations</button>
+</section>
+
+<!-- ============ ÉCRAN 3 ============ -->
+<section class="screen" id="s3">
+  <h1>On vérifie gratuitement</h1>
+  <p class="sub">Le CFA revient vers vous avec une réponse ferme.</p>
+  <div class="grid two">
+    <div><label for="l_garage">Nom du garage</label><input id="l_garage"></div>
+    <div><label for="l_dirigeant">Nom du dirigeant</label><input id="l_dirigeant" autocomplete="name"></div>
+    <div><label for="l_tel">Téléphone</label><input id="l_tel" type="tel" inputmode="tel" autocomplete="tel"></div>
+    <div><label for="l_mail">Email</label><input id="l_mail" type="email" inputmode="email" autocomplete="email"></div>
+    <div><label for="l_salarie">Nom du salarié</label><input id="l_salarie"></div>
+    <div><label for="l_age">Âge du salarié</label><input id="l_age" type="number" inputmode="numeric"></div>
+  </div>
+  <p class="err" id="err3" hidden></p>
+  <div style="margin-top:18px">
+    <button class="btn btn-green" id="btnSendLead">ENVOYER AU CFA</button>
+    <button class="btn btn-ghost" data-go="s2">← Revenir au résultat</button>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 4 : confirmation ============ -->
+<section class="screen" id="s4">
+  <div class="done" style="margin-top:26px">
+    <h2>Dossier transmis</h2>
+    <p style="margin:0 0 4px">Le CFA vous rappelle pour confirmer l'éligibilité.</p>
+    <p class="hint-s" id="doneCfa"></p>
+  </div>
+  <div style="margin-top:18px">
+    <button class="btn btn-ghost" id="btnPdf2">Télécharger la simulation</button>
+    <button class="btn btn-primary" id="btnNew">Nouvelle simulation</button>
+  </div>
+</section>
+
+<!-- ============ ADMIN ============ -->
+<section class="screen admin" id="sAdmin">
+  <h1>Paramètres</h1>
+  <p class="sub">Réglages du calcul. Aucune modification de code nécessaire.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="adminBody"></div>
+  <div style="margin-top:6px">
+    <button class="btn btn-primary" id="btnSaveP">Enregistrer les paramètres</button>
+    <button class="btn btn-ghost" data-go="s1">← Revenir au simulateur</button>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+</div><!-- /app -->
+
+<div class="saved" id="toast">Enregistré</div>
+
+<!-- ============ PDF A4 ============ -->
+<div id="print">
+  <div class="p-head">
+    <h1 id="p_garage">—</h1>
+    <p class="p-sub" id="p_sub">—</p>
+  </div>
+  <div class="p-two">
+    <div class="p-box"><h2>SITUATION ACTUELLE</h2><div class="v" id="p_now">—</div><div style="font-size:9pt;color:#555">coût mensuel employeur estimé</div></div>
+    <div class="p-box"><h2>AVEC LE CFA ADULTES</h2><div class="v" id="p_cfa">—</div><div style="font-size:9pt;color:#555">coût mensuel employeur estimé</div></div>
+  </div>
+  <div class="p-save"><h2>ÉCONOMIE</h2><div class="v" id="p_eco">—</div><div class="y" id="p_eco_an">—</div></div>
+  <table class="p-info"><tbody id="p_info"></tbody></table>
+  <ul>
+    <li>Votre salarié conserve une activité professionnelle</li>
+    <li>Il prépare un diplôme reconnu</li>
+    <li>Formation pensée pour limiter son absence de l'entreprise</li>
+    <li>Le CFA vous accompagne dans les démarches</li>
+  </ul>
+  <div class="p-foot">
+    <div id="p_cfa_coord" style="font-weight:600;color:#000;margin-bottom:2mm"></div>
+    Simulation indicative. L'éligibilité, les aides, la rémunération et le financement doivent être confirmés selon la situation du salarié et les règles applicables au moment de la contractualisation.
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =======================================================================
+   1. PARAMÈTRES PAR DÉFAUT  (tous modifiables dans l'écran Paramètres)
+   Sources des valeurs par défaut : SMIC au 01/06/2026 (12,31 €/h),
+   grille D.6222-26, aide employeur 2026 (décret du 06/03/2026).
+   ======================================================================= */
+const DEFAULTS = {
+  version: 5,
+
+  /* --- Bases --- */
+  smicHoraire: 12.31,
+  heuresMois: 151.67,
+  coefNetBrut: 1.27,          // brut estimé = net × coef (si brut non connu)
+  smcBranche: 0,              // salaire mini conventionnel mensuel brut (0 = non utilisé)
+  smcPct26: 85,               // 26 ans et + : plancher = % du SMC branche
+
+  /* --- Charges patronales du contrat actuel, par tranche de brut (× SMIC) --- */
+  chargesActuelles: [
+    { maxSmic: 1.0,  taux: 9  },
+    { maxSmic: 1.3,  taux: 17 },
+    { maxSmic: 1.6,  taux: 23 },
+    { maxSmic: 99,   taux: 30 }
+  ],
+
+  /* --- Charges patronales en apprentissage (après réduction générale) --- */
+  chargesApprenti: 6,
+
+  /* --- Rémunération selon l'âge (% du SMIC, 1re année de contrat) --- */
+  tranchesAge: [
+    { min: 16, max: 17, pct: 27,  statut: 'ok' },
+    { min: 18, max: 20, pct: 43,  statut: 'ok' },
+    { min: 21, max: 25, pct: 53,  statut: 'ok' },
+    { min: 26, max: 29, pct: 100, statut: 'ok' },
+    { min: 30, max: 99, pct: 100, statut: 'confirmer' }
+  ],
+  ageMin: 16,
+  ageDefaut: 26,
+
+  /* --- Politique de rémunération en apprentissage --- */
+  politiqueRemu: 'net',       // 'net' = conserver le net actuel | 'minimum' = grille légale | 'brut' = conserver le brut
+  seuilExoSalariale: 79,      // % du SMIC exonéré de cotisations salariales
+  tauxCotSalApprenti: 11.5,   // % de cotisations salariales au-delà du seuil
+  seuilCsg: 50,               // % du SMIC au-delà duquel CSG/CRDS s'appliquent
+  tauxCsgCrds: 9.53,          // % (9,7 % après abattement de 1,75 %)          // âge retenu si le champ est laissé vide
+  plafonnerSalaireActuel: true,   // ne jamais afficher une rému supérieure au salaire actuel
+
+  /* --- Aides employeur --- */
+  aidePme: 5000,       // < 250 salariés, 1re année, niveau 3-4
+  aideGe: 2000,        // >= 250 salariés
+  aideMois: 12,        // durée d'application (mois)
+
+  /* --- Formation / OPCO --- */
+  coutFormationAn: 8000,
+  priseOpcoAn: 8000,
+  resteChargeManuel: -1,   // -1 = calculé (coût − OPCO) ; sinon montant annuel imposé
+
+  /* --- Contrats actuels --- */
+  contrats: [
+    { label: 'CDI',                          statut: 'ok' },
+    { label: 'CDD',                          statut: 'ok' },
+    { label: 'Temps partiel',                statut: 'ok' },
+    { label: 'Intérim',                      statut: 'confirmer' },
+    { label: 'Période d\'essai',             statut: 'ok' },
+    { label: 'Pas encore embauché',          statut: 'confirmer' },
+    { label: 'Déjà en apprentissage',        statut: 'exclu' },
+    { label: 'Déjà en contrat pro',          statut: 'exclu' }
+  ],
+
+  /* --- Coordonnées CFA (PDF + écran final) --- */
+  cfaNom: 'VSM CFA',
+  cfaAdresse: 'Gennevilliers (92)',
+  cfaTel: '',
+  cfaEmail: '',
+  cfaContact: '',
+
+  /* --- Divers --- */
+  pinAdmin: ''
+};
+
+/* =======================================================================
+   2. STOCKAGE (artefact → window.storage, sinon localStorage, sinon mémoire)
+   ======================================================================= */
+let MEM = {};
+const Store = {
+  async get(k){
+    try { if (window.storage) { const r = await window.storage.get(k); if (r && r.value) return JSON.parse(r.value); } } catch(e){}
+    try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch(e){}
+    return (k in MEM) ? MEM[k] : null;
+  },
+  async set(k,v){
+    MEM[k] = v;
+    try { if (window.storage) { await window.storage.set(k, JSON.stringify(v)); return true; } } catch(e){}
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){}
+    return false;
+  }
+};
+
+let P = JSON.parse(JSON.stringify(DEFAULTS));
+let LEADS = [];
+let LAST = null;
+
+/* =======================================================================
+   3. UTILITAIRES
+   ======================================================================= */
+const $ = s => document.querySelector(s);
+const eur = n => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(Math.round(n)) + ' €';
+const nb  = n => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(Math.round(n));
+const num = v => { const x = parseFloat(String(v).replace(',','.')); return isFinite(x) ? x : null; };
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1800); }
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id===id));
+  window.scrollTo(0,0);
+}
+
+/* =======================================================================
+   4. MOTEUR DE CALCUL
+   ======================================================================= */
+function smicMensuel(){ return P.smicHoraire * P.heuresMois; }
+
+function tauxActuel(brut){
+  const r = brut / smicMensuel();
+  const bandes = [...P.chargesActuelles].sort((a,b)=>a.maxSmic-b.maxSmic);
+  for (const b of bandes) if (r <= b.maxSmic) return b.taux;
+  return bandes.length ? bandes[bandes.length-1].taux : 0;
+}
+
+/* net perçu par un apprenti pour un brut donné */
+function netApprenti(B){
+  const S = smicMensuel();
+  const a1 = Math.max(0, B - S * P.seuilExoSalariale/100);
+  const a2 = Math.max(0, B - S * P.seuilCsg/100);
+  return B - a1 * P.tauxCotSalApprenti/100 - a2 * P.tauxCsgCrds/100;
+}
+/* brut d'apprentissage nécessaire pour servir un net donné */
+function brutPourNet(net){
+  let lo = 0, hi = Math.max(net * 1.5, 500);
+  let g = 0;
+  while (netApprenti(hi) < net && g++ < 40) hi *= 1.5;
+  for (let i = 0; i < 60; i++){ const m = (lo + hi)/2; if (netApprenti(m) < net) lo = m; else hi = m; }
+  return (lo + hi)/2;
+}
+
+function trancheAge(age){
+  return P.tranchesAge.find(t => age >= t.min && age <= t.max) || null;
+}
+
+function calculer(d){
+  const out = { blocages: [], alertes: [], ok: false };
+  const SMIC = smicMensuel();
+
+  /* --- salaire --- */
+  let brut = d.brut, estime = false;
+  if (!brut && d.net) { brut = d.net * P.coefNetBrut; estime = true; }
+  if (!brut && d.cout) { brut = d.cout / (1 + P.chargesActuelles[P.chargesActuelles.length-1].taux/100); estime = true; }
+  if (!brut) out.blocages.push("Salaire non renseigné");
+
+  /* --- âge (facultatif : tranche adulte par défaut) --- */
+  const age = d.age || P.ageDefaut;
+  const t = trancheAge(age);
+  if (d.age && d.age < P.ageMin) out.blocages.push("Âge inférieur au minimum paramétré");
+  else if (!t) out.blocages.push("Âge hors des tranches paramétrées");
+
+  /* --- contrat (facultatif) --- */
+  const c = P.contrats.find(x => x.label === d.contrat);
+  if (c && c.statut === 'exclu') out.blocages.push("Ce contrat n'entre pas dans le dispositif");
+  else if (c && c.statut === 'confirmer') out.alertes.push("Situation contractuelle à vérifier par le CFA");
+
+  if (out.blocages.length) return out;
+
+  /* --- coût actuel : chiffre du patron en priorité --- */
+  const tx = tauxActuel(brut);
+  const coutSaisi = !!d.cout;
+  const coutNow = coutSaisi ? d.cout : brut * (1 + tx/100);
+
+  /* --- rémunération en apprentissage --- */
+  const quotite = brut < SMIC ? (brut / SMIC) : 1;          // temps partiel supposé
+  const netActuel = d.net || (brut / P.coefNetBrut);
+
+  /* plancher légal : grille d'âge, et minimum conventionnel si renseigné */
+  let mini = SMIC * quotite * (t.pct/100);
+  if (P.smcBranche > 0 && age >= 26) mini = Math.max(mini, P.smcBranche * quotite * (P.smcPct26/100));
+
+  /* l'employeur est libre de rémunérer au-dessus du minimum : ici on conserve le net du salarié */
+  let remu;
+  if (P.politiqueRemu === 'brut')          remu = brut;
+  else if (P.politiqueRemu === 'minimum')  remu = mini;
+  else                                     remu = brutPourNet(netActuel);
+  remu = Math.max(remu, mini);
+  if (P.plafonnerSalaireActuel) remu = Math.min(remu, brut);
+
+  const netApp = netApprenti(remu);
+  const deltaNet = netApp - netActuel;
+
+  const chApp   = remu * (P.chargesApprenti/100);
+  const aideAn  = d.effectif === 'ge' ? P.aideGe : P.aidePme;
+  const aideM   = (P.aideMois > 0 ? aideAn/12 : 0);
+  const resteAn = P.resteChargeManuel >= 0 ? P.resteChargeManuel : Math.max(0, P.coutFormationAn - P.priseOpcoAn);
+  const resteM  = resteAn/12;
+  const coutCfa = remu + chApp - aideM + resteM;
+  const eco     = coutNow - coutCfa;
+
+  if (t.statut === 'confirmer') out.alertes.push("Âge hors apprentissage classique : dérogation ou contrat de professionnalisation à valider par le CFA");
+  if (brut < SMIC) out.alertes.push("Salaire inférieur au SMIC temps plein : temps partiel supposé");
+  if (deltaNet < -5) out.alertes.push("Le net du salarié baisserait de " + eur(-deltaNet) + " : rémunération à ajuster avec le CFA");
+  if (eco <= 0) out.blocages.push("Pas d'économie sur ce profil avec les paramètres actuels");
+  if (out.blocages.length) return out;
+
+  Object.assign(out, {
+    ok:true, brut, estime, tx, coutNow, coutSaisi, remu, chApp, aideM, resteM, coutCfa,
+    eco, ecoAn: eco*12, pct: Math.round(remu / SMIC * 100), pctMini: t.pct, age,
+    netActuel, netApp, deltaNet, mini, aideAn, resteAn, quotite
+  });
+  return out;
+}
+
+/* =======================================================================
+   5. AFFICHAGE DU RÉSULTAT
+   ======================================================================= */
+function afficher(d, r){
+  LAST = { d, r };
+  $('#r_title').textContent = d.garage || 'Votre garage';
+  $('#r_sub').textContent = [d.prenom, d.poste, d.age ? d.age + ' ans' : '', d.contrat].filter(Boolean).join(' · ');
+
+  /* alertes */
+  const fl = $('#r_flags');
+  const msgs = r.ok ? r.alertes : r.blocages.concat(r.alertes);
+  fl.innerHTML = msgs.length
+    ? '<div class="flag"><b>' + (r.ok ? 'À vérifier' : 'À confirmer par le CFA') + '</b><ul><li>' + msgs.map(esc).join('</li><li>') + '</li></ul></div>'
+    : '';
+
+  const save = $('#r_save');
+  if (!r.ok){
+    $('#r_now').textContent = d.cout ? eur(d.cout) : (d.net ? eur(d.net * P.coefNetBrut * 1.3) : 'À confirmer');
+    $('#r_now_d').innerHTML = '';
+    $('#r_cfa').textContent = 'À confirmer';
+    $('#r_cfa_d').innerHTML = '';
+    $('#r_netkeep').hidden = true;
+    save.classList.add('pending');
+    $('#r_eco').innerHTML = 'À confirmer par le CFA';
+    save.querySelector('.year').style.display = 'none';
+    return;
+  }
+
+  save.classList.remove('pending');
+  save.querySelector('.year').style.display = '';
+  $('#r_now').textContent = eur(r.coutNow);
+  $('#r_cfa').textContent = eur(r.coutCfa);
+  $('#r_eco').innerHTML = nb(r.eco) + '<span class="unit"> € / mois</span>';
+  $('#r_eco_an').textContent = nb(r.ecoAn);
+
+  const nk = $('#r_netkeep');
+  nk.hidden = false;
+  nk.textContent = r.deltaNet > 5
+    ? 'Le salarié touche ' + eur(r.netApp) + ' net, soit ' + eur(r.deltaNet) + ' de plus qu\'aujourd\'hui'
+    : 'Le salarié garde son net : ' + eur(r.netApp) + ' par mois';
+
+  $('#r_now_d').innerHTML = r.coutSaisi
+    ? li('Chiffre communiqué par le garage', eur(r.coutNow)) + (d.net ? li('Net versé au salarié', eur(d.net)) : '')
+    : li('Net versé au salarié', eur(d.net || 0)) + li('Salaire brut reconstitué', eur(r.brut)) + li('Charges patronales (' + r.tx + ' %)', eur(r.coutNow - r.brut));
+
+  $('#r_cfa_d').innerHTML =
+    li('Net conservé par le salarié', eur(r.netApp) + (r.deltaNet > 5 ? ' (+' + eur(r.deltaNet) + ')' : '')) +
+    li('Salaire brut (' + r.pct + ' % du SMIC)', eur(r.remu)) +
+    li('Charges patronales (' + P.chargesApprenti + ' %)', eur(r.chApp)) +
+    li('Aide employeur', '− ' + eur(r.aideM)) +
+    li('Reste à charge formation', r.resteM > 0 ? eur(r.resteM) : 'Pris en charge OPCO') +
+    (d.age ? '' : li('Base retenue', P.ageDefaut + ' ans et plus'));
+
+  remplirPdf(d, r);
+}
+const li = (a,b) => '<li><span>' + esc(a) + '</span><span>' + esc(b) + '</span></li>';
+
+function remplirPdf(d, r){
+  const coord = [P.cfaNom, P.cfaAdresse, P.cfaTel, P.cfaEmail, P.cfaContact].filter(Boolean).join(' · ');
+  $('#p_garage').textContent = d.garage || 'Simulation CFA Adultes';
+  $('#p_sub').textContent = 'Simulation CFA Adultes — ' + new Date().toLocaleDateString('fr-FR');
+  $('#p_now').textContent = r.ok ? eur(r.coutNow) : 'À confirmer';
+  $('#p_cfa').textContent = r.ok ? eur(r.coutCfa) : 'À confirmer';
+  $('#p_eco').textContent = r.ok ? eur(r.eco) + ' / mois' : 'À confirmer par le CFA';
+  $('#p_eco_an').textContent = r.ok ? 'soit ' + eur(r.ecoAn) + ' sur 12 mois' : '';
+  const rows = [
+    ['Salarié', [d.prenom, d.poste].filter(Boolean).join(' — ') || '—'],
+    ['Âge', d.age ? d.age + ' ans' : (r.age ? r.age + ' ans et plus (base retenue)' : '—')],
+    ['Contrat actuel', d.contrat || '—'],
+    ['Salaire net mensuel', d.net ? eur(d.net) : '—'],
+    ['Coût employeur actuel', r.ok ? eur(r.coutNow) + (r.coutSaisi ? '' : ' (estimé)') : (d.cout ? eur(d.cout) : '—')],
+    ['Net conservé par le salarié', r.ok ? eur(r.netApp) : 'À confirmer'],
+    ['Salaire brut en apprentissage', r.ok ? eur(r.remu) + ' (' + r.pct + ' % du SMIC)' : 'À confirmer'],
+    ['Aide employeur', r.ok ? eur(r.aideAn) + ' sur la 1re année' : 'À confirmer'],
+    ['Reste à charge formation', r.ok ? (r.resteAn > 0 ? eur(r.resteAn) + ' / an' : 'Pris en charge OPCO') : 'À confirmer']
+  ];
+  $('#p_info').innerHTML = rows.map(x => '<tr><td>' + esc(x[0]) + '</td><td><b>' + esc(x[1]) + '</b></td></tr>').join('');
+  $('#p_cfa_coord').textContent = coord;
+}
+
+/* =======================================================================
+   6. FLUX
+   ======================================================================= */
+function lireForm(){
+  return {
+    garage:   $('#f_garage').value.trim(),
+    effectif: $('#f_effectif').value,
+    prenom:   $('#f_prenom').value.trim(),
+    age:      num($('#f_age').value),
+    poste:    $('#f_poste').value,
+    contrat:  $('#f_contrat').value,
+    net:      num($('#f_net').value),
+    brut:     num($('#f_brut').value),
+    cout:     ($('#f_cout') ? num($('#f_cout').value) : null)
+  };
+}
+
+$('#btnCalc').addEventListener('click', () => {
+  const d = lireForm();
+  const e = $('#err1');
+  if (!d.net && !d.brut && !d.cout){ e.hidden = false; e.textContent = "Indiquez au moins le salaire net du salarié."; return; }
+  e.hidden = true;
+  afficher(d, calculer(d));
+  show('s2');
+});
+
+$('#btnGoLead').addEventListener('click', () => {
+  const d = LAST ? LAST.d : lireForm();
+  $('#l_garage').value = d.garage || '';
+  $('#l_salarie').value = d.prenom || '';
+  $('#l_age').value = d.age || '';
+  show('s3');
+});
+
+$('#btnSendLead').addEventListener('click', async () => {
+  const e = $('#err3');
+  const lead = {
+    date: new Date().toISOString(),
+    garage: $('#l_garage').value.trim(),
+    dirigeant: $('#l_dirigeant').value.trim(),
+    tel: $('#l_tel').value.trim(),
+    email: $('#l_mail').value.trim(),
+    salarie: $('#l_salarie').value.trim(),
+    age: $('#l_age').value.trim(),
+    eco: LAST && LAST.r.ok ? Math.round(LAST.r.eco) : null
+  };
+  if (!lead.garage || (!lead.tel && !lead.email)){
+    e.hidden = false; e.textContent = "Il faut au minimum le nom du garage et un téléphone ou un email."; return;
+  }
+  e.hidden = true;
+  LEADS.push(lead);
+  await Store.set('cfa_leads', LEADS);
+  $('#doneCfa').textContent = [P.cfaNom, P.cfaTel, P.cfaEmail].filter(Boolean).join(' · ');
+  show('s4');
+});
+
+$('#btnPdf').addEventListener('click', () => window.print());
+$('#btnPdf2').addEventListener('click', () => window.print());
+$('#btnNew').addEventListener('click', reset);
+$('#btnHome').addEventListener('click', reset);
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+
+function reset(){
+  ['f_garage','f_prenom','f_age','f_net','f_brut','l_garage','l_dirigeant','l_tel','l_mail','l_salarie','l_age'].forEach(id => $('#'+id).value = '');
+  $('#f_poste').selectedIndex = 0; $('#f_contrat').selectedIndex = 0; $('#f_effectif').selectedIndex = 0;
+  $('#err1').hidden = true; LAST = null; show('s1');
+}
+
+$('#btnAdmin').addEventListener('click', () => {
+  if (P.pinAdmin){
+    const v = prompt('Code d\'accès aux paramètres');
+    if (v !== P.pinAdmin) return;
+  }
+  renderAdmin('bases'); show('sAdmin');
+});
+
+/* =======================================================================
+   7. ÉCRAN PARAMÈTRES
+   ======================================================================= */
+const TABS = [
+  ['bases','Bases & salaires'],
+  ['charges','Charges'],
+  ['age','Âge'],
+  ['aides','Aides & OPCO'],
+  ['contrats','Contrats'],
+  ['cfa','CFA'],
+  ['leads','Demandes'],
+  ['json','Sauvegarde']
+];
+let TAB = 'bases';
+
+function fld(key, label, hint, step){
+  return '<div style="margin-bottom:14px"><label for="p_'+key+'">'+esc(label)+'</label>' +
+    '<input id="p_'+key+'" data-p="'+key+'" type="number" inputmode="decimal" step="'+(step||'0.01')+'" value="'+P[key]+'">' +
+    (hint ? '<p class="hint-s">'+esc(hint)+'</p>' : '') + '</div>';
+}
+function txt(key, label){
+  return '<div style="margin-bottom:14px"><label for="p_'+key+'">'+esc(label)+'</label>' +
+    '<input id="p_'+key+'" data-p="'+key+'" data-type="text" value="'+esc(P[key])+'"></div>';
+}
+
+function renderAdmin(tab){
+  if (tab) TAB = tab;
+  $('#tabs').innerHTML = TABS.map(t => '<button class="tab" role="tab" aria-selected="'+(t[0]===TAB)+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join('');
+  $('#tabs').querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { collect(); renderAdmin(b.dataset.tab); }));
+  const B = $('#adminBody');
+  const SMIC = smicMensuel();
+
+  if (TAB === 'bases'){
+    B.innerHTML = '<div class="card"><h3>SMIC de référence</h3><p class="hint">SMIC mensuel calculé : <b>'+eur(SMIC)+'</b></p>'
+      + fld('smicHoraire','SMIC horaire brut (€)','Au 01/06/2026 : 12,31 €.')
+      + fld('heuresMois','Heures par mois','151,67 pour 35 h/semaine.')
+      + '</div>'
+      + '<div class="card"><h3>Passage du net au brut</h3><p class="hint">Utilisé seulement si le brut n\'est pas connu.</p>'
+      + fld('coefNetBrut','Coefficient net → brut','1,27 ≈ net à 79 % du brut.') + '</div>'
+      + '<div class="card"><h3>Minimum conventionnel de branche</h3><p class="hint">Laisser 0 si non utilisé.</p>'
+      + fld('smcBranche','SMC mensuel brut (€)','',1)
+      + fld('smcPct26','Plancher 26 ans et + (% du SMC)','85 % selon le Code du travail.',1)
+      + '</div>'
+      + '<div class="card"><h3>Rémunération en apprentissage</h3><p class="hint">L\'employeur est libre de payer au-dessus du minimum légal. Par défaut, le net du salarié est conservé.</p>'
+      + '<label for="p_politiqueRemu">Politique appliquée</label><select id="p_politiqueRemu" data-p="politiqueRemu" data-type="text">'
+      + ['net|Conserver le net actuel du salarié','minimum|Minimum légal de la grille','brut|Conserver le brut actuel']
+          .map(o => { const v=o.split('|'); return '<option value="'+v[0]+'"'+(P.politiqueRemu===v[0]?' selected':'')+'>'+v[1]+'</option>'; }).join('')
+      + '</select><p class="hint-s">Le plancher de la grille d\'âge s\'applique toujours.</p>'
+      + fld('seuilExoSalariale','Exonération de cotisations salariales (% du SMIC)','',1)
+      + fld('tauxCotSalApprenti','Cotisations salariales au-delà du seuil (%)','',0.1)
+      + fld('seuilCsg','Seuil CSG/CRDS (% du SMIC)','',1)
+      + fld('tauxCsgCrds','Taux CSG/CRDS (%)','9,7 % après abattement de 1,75 % = 9,53 %.',0.01)
+      + '</div>'
+      + '<div class="card"><h3>Règles de rémunération</h3>'
+      + '<label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" data-p="plafonnerSalaireActuel" '+(P.plafonnerSalaireActuel?'checked':'')+' style="width:22px;height:22px"> Ne jamais dépasser le salaire actuel</label>'
+      + '<p class="hint-s">Si décoché, la grille s\'applique même au-dessus du salaire actuel.</p></div>'
+      + '<div class="card"><h3>Âge par défaut</h3><p class="hint">Utilisé quand le commercial ne saisit pas l\'âge.</p>'
+      + fld('ageDefaut','Âge retenu par défaut','',1) + '</div>'
+      + '<div class="card"><h3>Accès aux paramètres</h3>' + txt('pinAdmin','Code d\'accès (vide = libre)') + '</div>';
+  }
+
+  if (TAB === 'charges'){
+    B.innerHTML = '<div class="card"><h3>Contrat actuel</h3><p class="hint">Taux de charges patronales selon le brut, exprimé en multiple du SMIC.</p>'
+      + table('chargesActuelles', [['maxSmic','Jusqu\'à (× SMIC)','number'],['taux','Charges (%)','number']])
+      + '</div>'
+      + '<div class="card"><h3>Contrat CFA Adultes</h3><p class="hint">Taux après réduction générale de cotisations.</p>'
+      + fld('chargesApprenti','Charges patronales (%)','',0.1) + '</div>';
+  }
+
+  if (TAB === 'age'){
+    B.innerHTML = '<div class="card"><h3>Rémunération selon l\'âge</h3><p class="hint">% du SMIC. Statut « à confirmer » affiche un avertissement au lieu d\'un chiffre ferme.</p>'
+      + table('tranchesAge', [['min','De','number'],['max','À','number'],['pct','% SMIC','number'],['statut','Statut','statut']])
+      + '</div>'
+      + '<div class="card">' + fld('ageMin','Âge minimum accepté','En dessous : « À confirmer par le CFA ».',1) + '</div>';
+  }
+
+  if (TAB === 'aides'){
+    B.innerHTML = '<div class="card"><h3>Aide employeur</h3><p class="hint">1re année du contrat. Montants 2026 : 5 000 € (&lt; 250 salariés), 2 000 € au-delà.</p>'
+      + fld('aidePme','Moins de 250 salariés (€/an)','',100)
+      + fld('aideGe','250 salariés et plus (€/an)','',100)
+      + fld('aideMois','Durée d\'application (mois)','0 = aucune aide dans le calcul.',1) + '</div>'
+      + '<div class="card"><h3>Formation</h3>'
+      + fld('coutFormationAn','Coût annuel de la formation (€)','',100)
+      + fld('priseOpcoAn','Prise en charge OPCO / NPEC (€)','',100)
+      + fld('resteChargeManuel','Reste à charge imposé (€/an)','−1 = calculé automatiquement (coût − OPCO).',100) + '</div>';
+  }
+
+  if (TAB === 'contrats'){
+    B.innerHTML = '<div class="card"><h3>Types de contrat actuel</h3><p class="hint">« Exclu » bloque le calcul, « à confirmer » l\'accompagne d\'un avertissement.</p>'
+      + table('contrats', [['label','Libellé','text'],['statut','Statut','statut']]) + '</div>';
+  }
+
+  if (TAB === 'cfa'){
+    B.innerHTML = '<div class="card"><h3>Coordonnées affichées sur le PDF</h3>'
+      + txt('cfaNom','Nom du CFA') + txt('cfaAdresse','Adresse') + txt('cfaTel','Téléphone')
+      + txt('cfaEmail','Email') + txt('cfaContact','Interlocuteur') + '</div>';
+  }
+
+  if (TAB === 'leads'){
+    B.innerHTML = '<div class="card"><h3>Dossiers à vérifier</h3><p class="hint">' + LEADS.length + ' demande(s) enregistrée(s) sur cet appareil.</p>'
+      + '<div class="leads">' + (LEADS.length ? LEADS.slice().reverse().map(l =>
+          '<div class="lead"><b>' + esc(l.garage) + (l.eco ? ' — ' + eur(l.eco) + '/mois' : '') + '</b>'
+          + '<span>' + esc([l.dirigeant, l.tel, l.email].filter(Boolean).join(' · ')) + '</span>'
+          + '<span>' + esc([l.salarie, l.age ? l.age + ' ans' : ''].filter(Boolean).join(' · ')) + ' — ' + new Date(l.date).toLocaleString('fr-FR') + '</span></div>'
+        ).join('') : '<p class="hint-s">Aucune demande pour le moment.</p>') + '</div>'
+      + '<div style="margin-top:14px"><button class="mini" id="csv">Exporter en CSV</button><button class="mini danger" id="clr">Effacer</button></div></div>';
+    $('#csv') && $('#csv').addEventListener('click', exportCsv);
+    $('#clr') && $('#clr').addEventListener('click', async () => {
+      if (!confirm('Effacer toutes les demandes enregistrées ?')) return;
+      LEADS = []; await Store.set('cfa_leads', LEADS); renderAdmin('leads'); toast('Demandes effacées');
+    });
+  }
+
+  if (TAB === 'json'){
+    B.innerHTML = '<div class="card"><h3>Tous les paramètres</h3><p class="hint">Copier / coller pour transférer les réglages sur un autre appareil.</p>'
+      + '<textarea id="jsonBox">' + esc(JSON.stringify(P, null, 2)) + '</textarea>'
+      + '<div style="margin-top:12px"><button class="mini" id="imp">Appliquer ce JSON</button><button class="mini danger" id="rst">Valeurs par défaut</button></div></div>';
+    $('#imp').addEventListener('click', async () => {
+      try { const o = JSON.parse($('#jsonBox').value); P = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), o); await Store.set('cfa_params', P); buildSelects(); renderAdmin('json'); toast('Paramètres appliqués'); }
+      catch(e){ alert('JSON invalide : ' + e.message); }
+    });
+    $('#rst').addEventListener('click', async () => {
+      if (!confirm('Revenir aux valeurs par défaut ?')) return;
+      P = JSON.parse(JSON.stringify(DEFAULTS)); await Store.set('cfa_params', P); buildSelects(); renderAdmin('json'); toast('Paramètres réinitialisés');
+    });
+  }
+}
+
+function table(key, cols){
+  const rows = P[key].map((r,i) =>
+    '<tr>' + cols.map(c => '<td>' + cell(key,i,c,r[c[0]]) + '</td>').join('')
+    + '<td><button class="row-del" data-del="'+key+'" data-i="'+i+'" aria-label="Supprimer">×</button></td></tr>'
+  ).join('');
+  return '<table><thead><tr>' + cols.map(c => '<th>'+c[1]+'</th>').join('') + '<th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '<button class="mini" data-add="'+key+'" style="margin-top:10px">+ Ajouter une ligne</button>';
+}
+function cell(key,i,c,v){
+  const attrs = 'data-t="'+key+'" data-i="'+i+'" data-k="'+c[0]+'"';
+  if (c[2] === 'statut'){
+    return '<select '+attrs+'>' + ['ok','confirmer','exclu'].map(s =>
+      '<option value="'+s+'"'+(v===s?' selected':'')+'>'+({ok:'OK',confirmer:'À confirmer',exclu:'Exclu'})[s]+'</option>').join('') + '</select>';
+  }
+  if (c[2] === 'number') return '<input '+attrs+' type="number" inputmode="decimal" step="0.01" value="'+v+'">';
+  return '<input '+attrs+' value="'+esc(v)+'">';
+}
+
+/* délégation : ajout / suppression de lignes */
+$('#adminBody').addEventListener('click', e => {
+  const add = e.target.closest('[data-add]'), del = e.target.closest('[data-del]');
+  if (add){ collect(); const k = add.dataset.add;
+    P[k].push(k==='contrats' ? {label:'Nouveau contrat',statut:'ok'} : k==='tranchesAge' ? {min:0,max:0,pct:0,statut:'ok'} : {maxSmic:1,taux:0});
+    renderAdmin(); }
+  if (del){ collect(); P[del.dataset.del].splice(+del.dataset.i,1); renderAdmin(); }
+});
+
+function collect(){
+  document.querySelectorAll('#adminBody [data-p]').forEach(el => {
+    const k = el.dataset.p;
+    if (el.type === 'checkbox') P[k] = el.checked;
+    else if (el.dataset.type === 'text' || el.type === 'text') P[k] = el.value;
+    else { const v = num(el.value); if (v !== null) P[k] = v; }
+  });
+  document.querySelectorAll('#adminBody [data-t]').forEach(el => {
+    const t = el.dataset.t, i = +el.dataset.i, k = el.dataset.k;
+    if (!P[t] || !P[t][i]) return;
+    P[t][i][k] = (el.tagName === 'SELECT' || el.type !== 'number') ? el.value : (num(el.value) ?? 0);
+  });
+}
+
+$('#btnSaveP').addEventListener('click', async () => {
+  collect();
+  const ok = await Store.set('cfa_params', P);
+  buildSelects();
+  toast(ok ? 'Paramètres enregistrés' : 'Enregistrés pour cette session');
+});
+
+function exportCsv(){
+  const head = ['Date','Garage','Dirigeant','Téléphone','Email','Salarié','Âge','Économie mensuelle'];
+  const lines = [head.join(';')].concat(LEADS.map(l =>
+    [new Date(l.date).toLocaleString('fr-FR'), l.garage, l.dirigeant, l.tel, l.email, l.salarie, l.age, l.eco ?? '']
+    .map(v => '"' + String(v ?? '').replace(/"/g,'""') + '"').join(';')));
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dossiers-cfa-adultes.csv';
+  a.click();
+}
+
+/* =======================================================================
+   8. INITIALISATION
+   ======================================================================= */
+function buildSelects(){
+  $('#f_contrat').innerHTML = '<option value="">—</option>' + P.contrats.map(c => '<option>' + esc(c.label) + '</option>').join('');
+  $('#brandSub').textContent = P.cfaNom || 'Coût réel d\'un salarié en formation';
+}
+
+(async function init(){
+  const saved = await Store.get('cfa_params');
+  if (saved && saved.version === DEFAULTS.version) P = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), saved);
+  const leads = await Store.get('cfa_leads');
+  if (Array.isArray(leads)) LEADS = leads;
+  buildSelects();
+})();
+</script>
+</body>
+</html>

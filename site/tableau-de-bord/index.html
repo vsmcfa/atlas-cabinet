@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATLAS — Bilan du mois</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16305C;
+    --blue:#2A5FBF;
+    --blue-tint:#EAF2FC;
+    --blue-tint-2:#F6F9FD;
+    --green:#1E9E6B;
+    --green-tint:#E7F7F0;
+    --red:#C0392B;
+    --red-tint:#FBEAE8;
+    --amber:#B7791F;
+    --amber-tint:#FDF3E3;
+    --ink:#202B3D;
+    --grey:#5C6675;
+    --line:#E4E9F1;
+    --white:#FFFFFF;
+    --shadow: none;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--blue-tint-2);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px;}
+
+  header{background:var(--navy);padding:24px 0;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:24px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .month-badge{background:var(--blue);color:var(--white);font-weight:700;font-size:13px;letter-spacing:0.5px;padding:8px 16px;border-radius:100px;}
+
+  .greeting{background:var(--white);padding:26px 0 22px;border-bottom:1px solid var(--line);}
+  .greeting h1{font-size:21px;margin-bottom:6px;}
+  .greeting .garage-name{color:var(--blue);}
+  .greeting p{color:var(--grey);font-size:14.5px;}
+  .demo-tag{display:inline-block;margin-top:12px;background:var(--blue-tint);color:var(--blue);font-size:11.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:5px 12px;border-radius:100px;}
+
+  /* ===== TOP RECAP (simple, non-interactive, one glance) ===== */
+  .recap-card{background:var(--white);border-radius:16px;border:1px solid var(--line);overflow:hidden;}
+  .recap-row{display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid var(--line);}
+  .recap-row .r-icon{font-size:19px;width:28px;text-align:center;flex-shrink:0;}
+  .recap-row .r-label{flex:1;font-size:14px;font-weight:600;color:var(--navy);}
+  .recap-row .r-amount{font-family:'Poppins',sans-serif;font-weight:700;font-size:17px;}
+  .recap-row .r-amount.pos{color:var(--green);}
+  .recap-row .r-amount.neg{color:var(--red);}
+  .recap-net{background:var(--navy);padding:20px 20px;display:flex;align-items:center;justify-content:space-between;}
+  .recap-net .lab{color:#9FC1F8;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+  .recap-net .amt{font-family:'Poppins',sans-serif;font-weight:800;font-size:25px;color:var(--white);}
+  .recap-caption{text-align:center;font-size:12.5px;color:var(--grey);margin-top:14px;}
+
+  section{padding:30px 0;}
+  .section-head{margin-bottom:16px;}
+  .section-head h2{font-size:18px;}
+  .section-head p{color:var(--grey);font-size:13.5px;margin-top:3px;}
+
+  /* ===== FLOW STEP HEADER (CA / RH / Pieces / etc.) ===== */
+  .flow-step{margin-bottom:16px;}
+  .flow-num{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey);margin-bottom:8px;}
+  .flow-num .dot{width:22px;height:22px;border-radius:50%;background:var(--navy);color:var(--white);font-family:'Poppins',sans-serif;font-size:12px;display:flex;align-items:center;justify-content:center;}
+
+  /* ===== BIG AMOUNT CARD (clickable summary) ===== */
+  details.flow-card{background:var(--white);border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;}
+  details.flow-card.is-green summary{background:var(--green-tint);}
+  details.flow-card summary{list-style:none;cursor:pointer;padding:20px 22px;display:flex;align-items:center;gap:16px;}
+  details.flow-card summary::-webkit-details-marker{display:none;}
+  .flow-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .flow-icon.rev{background:var(--green-tint);}
+  .flow-icon.exp{background:var(--red-tint);}
+  .flow-main{flex:1;}
+  .flow-label{font-size:13px;color:var(--grey);font-weight:600;}
+  .flow-amount{font-family:'Poppins',sans-serif;font-weight:800;font-size:26px;}
+  .flow-amount.rev{color:var(--green);}
+  .flow-amount.exp{color:var(--red);}
+  .flow-sub{font-size:12.5px;color:var(--grey);margin-top:2px;}
+  .flow-chevron{font-size:13px;color:var(--blue);font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  details.flow-card[open] .flow-chevron .arrow{transform:rotate(180deg);}
+  .arrow{transition:transform .2s ease;display:inline-block;}
+  .flow-detail{border-top:1px solid var(--line);padding:20px 22px 22px;background:var(--blue-tint-2);}
+
+  /* ===== SUB DETAIL ROWS ===== */
+  .detail-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:18px 0;border-bottom:1px solid var(--line);}
+  .detail-row .name{font-size:14px;font-weight:600;color:var(--navy);flex:1;padding-top:2px;}
+  .detail-row .value-block{text-align:right;flex-shrink:0;}
+  .detail-row .value-block .value{font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;color:var(--ink);line-height:1.3;}
+  .detail-row .value-block .context{display:block;font-size:12.5px;color:var(--grey);font-weight:500;margin-top:4px;line-height:1.4;}
+  .doc-link{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none;}
+  .doc-link:hover{text-decoration:underline;}
+  .detail-row:last-child{border-bottom:none;}
+  
+  /* attachment rate bars */
+  /* ===== VENTES ADDITIONNELLES KPI ===== */
+  .va-kpi{background:var(--blue-tint);border-radius:14px;padding:16px 20px;text-align:center;margin:14px 0 0;}
+  .va-kpi-num{font-family:'Poppins',sans-serif;font-weight:800;font-size:32px;color:var(--blue);line-height:1;}
+  .va-kpi-lab{font-size:12.5px;font-weight:600;color:var(--navy);margin-top:6px;}
+  .va-kpi-note{font-size:12px;color:var(--green);font-weight:700;margin-top:6px;}
+
+  .attach-item{margin-bottom:14px;}
+  .attach-item:last-child{margin-bottom:0;}
+  .attach-top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px;}
+  .attach-top .name{font-weight:600;color:var(--navy);}
+  .attach-top .pct{font-weight:700;}
+  .attach-bar-bg{background:var(--white);border:1px solid var(--line);border-radius:100px;height:9px;overflow:hidden;}
+  .attach-bar-fill{background:var(--blue);height:100%;border-radius:100px;}
+  .attach-note{font-size:12px;color:var(--grey);margin-top:4px;}
+
+  /* technician cards */
+  .tech-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+  .tech-card:last-child{margin-bottom:0;}
+  .tech-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .tech-name{font-weight:700;color:var(--navy);font-size:14.5px;display:flex;align-items:center;gap:8px;}
+  .tech-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue-tint);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:700;font-size:12px;}
+  .tech-rentab{font-weight:700;font-size:14px;}
+  .tech-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px;font-size:12px;color:var(--grey);}
+  .tech-grid b{display:block;font-size:14px;color:var(--ink);font-weight:700;margin-bottom:1px;}
+  .tech-best{background:var(--green-tint);color:var(--green);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px;}
+
+  /* pieces category bars */
+  .cat-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .cat-row:last-child{margin-bottom:0;}
+  .cat-label{width:150px;font-size:13px;font-weight:600;color:var(--navy);flex-shrink:0;}
+  .cat-bar-bg{flex:1;background:var(--white);border:1px solid var(--line);border-radius:100px;height:9px;overflow:hidden;}
+  .cat-bar-fill{background:var(--red);opacity:0.75;height:100%;border-radius:100px;}
+  .cat-val{width:70px;text-align:right;font-size:12.5px;color:var(--grey);flex-shrink:0;}
+
+  /* simple list (charges fixes / fiscalite) */
+  .simple-list{background:var(--white);border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line);padding:6px 22px;}
+  .simple-list .detail-row{padding:14px 0;}
+
+  /* ===== NET RESULT ===== */
+  .net-result{background:linear-gradient(135deg, var(--navy) 0%, #1D4482 100%);border-radius:18px;padding:32px 28px;text-align:center;}
+  .net-result .lab{color:#9FC1F8;font-size:14px;font-weight:600;margin-bottom:8px;}
+  .net-result .num{font-family:'Poppins',sans-serif;font-weight:800;font-size:46px;color:var(--white);line-height:1;}
+  .net-result .sub{color:#C7D6F0;font-size:14px;margin-top:10px;}
+  .net-result .sub b{color:#7CE0B0;}
+  .net-recap{display:flex;justify-content:center;gap:22px;margin-top:20px;flex-wrap:wrap;font-size:12.5px;color:#9FC1F8;}
+  .net-recap span b{color:var(--white);display:block;font-size:14px;}
+
+  /* ===== TALK / ACTIONS (kept from before) ===== */
+  .talk-item{display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .talk-emoji{font-size:24px;flex-shrink:0;}
+  .talk-item p{font-size:14.5px;color:var(--ink);}
+  .talk-item p b{color:var(--navy);}
+
+  .action-card{background:var(--white);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:10px;}
+  .action-top{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .action-num{width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--white);font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .action-card h4{font-size:16px;color:var(--navy);}
+  .action-card p{font-size:14.5px;color:var(--grey);margin-bottom:10px;}
+  .action-gain{display:inline-block;background:var(--green-tint);color:var(--green);font-weight:700;font-size:13.5px;padding:6px 14px;border-radius:8px;}
+
+  .protect-card{background:var(--green-tint);border-radius:14px;padding:16px 20px;display:flex;gap:14px;align-items:center;}
+  .protect-icon{font-size:34px;flex-shrink:0;}
+  .protect-card h3{font-size:16px;margin-bottom:4px;}
+  .protect-card p{font-size:13.5px;color:var(--grey);}
+
+  .expert-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 20px;display:flex;gap:14px;align-items:flex-start;}
+  .expert-avatar{width:48px;height:48px;border-radius:50%;background:var(--blue);color:var(--white);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Poppins',sans-serif;font-weight:700;font-size:17px;}
+  .expert-text p{font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:10px;}
+  .expert-text .sign{font-weight:700;color:var(--navy);font-size:14px;}
+  .expert-text .role{font-size:12.5px;color:var(--grey);}
+
+  .cta-band{background:var(--white);border-top:1px solid var(--line);padding:32px 0;text-align:center;}
+  .cta-band p{color:var(--grey);font-size:14.5px;margin-bottom:14px;max-width:480px;margin-left:auto;margin-right:auto;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-weight:600;font-size:15px;padding:14px 28px;border-radius:100px;background:var(--blue);color:var(--white);border:none;cursor:pointer;text-decoration:none;}
+
+  @media (max-width:640px){
+
+    .cat-label{width:100px;font-size:12px;}
+    .net-recap{gap:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span></div>
+    <span class="month-badge">AOÛT 2026</span>
+  </div>
+</header>
+
+<div class="greeting">
+  <div class="wrap">
+    <h1><span class="garage-name" contenteditable="true">Garage JSB Auto</span></h1>
+    <p>Votre activité analysée poste par poste, pour piloter votre rentabilité dès le mois prochain.</p>
+    <span class="demo-tag">Exemple de démonstration</span>
+  </div>
+</div>
+
+<!-- ===================== RÉCAPITULATIF EN UN COUP D'ŒIL ===================== -->
+<section style="padding-bottom:10px;">
+  <div class="wrap">
+    <div class="recap-card">
+      <div class="recap-row">
+        <span class="r-icon">💰</span>
+        <span class="r-label">Chiffre d'affaires</span>
+        <span class="r-amount pos">58 400 €</span>
+      </div>
+      <div class="recap-row">
+        <span class="r-icon">👥</span>
+        <span class="r-label">Charges RH</span>
+        <span class="r-amount neg">− 12 200 €</span>
+      </div>
+      <div class="recap-row">
+        <span class="r-icon">🔩</span>
+        <span class="r-label">Pièces</span>
+        <span class="r-amount neg">− 20 000 €</span>
+      </div>
+      <div class="recap-row">
+        <span class="r-icon">🏢</span>
+        <span class="r-label">Charges fixes</span>
+        <span class="r-amount neg">− 4 650 €</span>
+      </div>
+      <div class="recap-row" style="border-bottom:none;">
+        <span class="r-icon">🏛️</span>
+        <span class="r-label">URSSAF & fiscalité</span>
+        <span class="r-amount neg">− 10 600 €</span>
+      </div>
+      <div class="recap-net">
+        <span class="lab">Bénéfice net du mois</span>
+        <span class="amt">10 950 €</span>
+      </div>
+    </div>
+    <p class="recap-caption">Le détail de chaque poste, juste en dessous.</p>
+  </div>
+</section>
+
+<!-- ===================== 1. CHIFFRE D'AFFAIRES ===================== -->
+<section style="padding-top:6px;">
+  <div class="wrap">
+    <div style="text-align:center;margin-bottom:22px;">
+      <h2 style="font-size:17px;">Le détail, poste par poste</h2>
+    </div>
+  </div>
+</section>
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="flow-step">
+      <div class="flow-num"><span class="dot">1</span>CE QUE VOUS AVEZ FAIT RENTRER</div>
+    </div>
+    <details class="flow-card">
+      <summary>
+        <span class="flow-icon rev">💰</span>
+        <div class="flow-main">
+          <div class="flow-label">Chiffre d'affaires du mois</div>
+          <div class="flow-amount rev">58 400 €</div>
+          <div class="flow-sub">↑ +3 700 € vs août 2025</div>
+        </div>
+        <span class="flow-chevron">Voir le détail <span class="arrow">▾</span></span>
+      </summary>
+      <div class="flow-detail">
+        <div class="detail-row">
+          <span class="name">Ventes initiales</span>
+          <div class="value-block">
+            <span class="value">38 400 €</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="name">Ventes additionnelles</span>
+          <div class="value-block">
+            <span class="value">20 000 €</span>
+          </div>
+        </div>
+        <div class="va-kpi">
+          <div class="va-kpi-num">34,2%</div>
+          <div class="va-kpi-lab">du chiffre d'affaires en ventes additionnelles</div>
+          <div class="va-kpi-note">↑ Le mois dernier : 15%</div>
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);">
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;">Ventes additionnelles à proposer</div>
+          <div class="attach-item">
+            <div class="attach-top"><span class="name">Plaquettes de frein → Disques vendus avec</span><span class="pct" style="color:var(--amber);">62%</span></div>
+            <div class="attach-bar-bg"><div class="attach-bar-fill" style="width:62%;background:var(--amber);"></div></div>
+            <div class="attach-note">Vos confrères sont plutôt à 85%. Marge de progression claire.</div>
+          </div>
+          <div class="attach-item">
+            <div class="attach-top"><span class="name">Kit de distribution → Galets & accessoires vendus avec</span><span class="pct" style="color:var(--green);">71%</span></div>
+            <div class="attach-bar-bg"><div class="attach-bar-fill" style="width:71%;background:var(--green);"></div></div>
+          </div>
+          <div class="attach-item">
+            <div class="attach-top"><span class="name">Amortisseurs → Biellettes de barre stabilisatrice vendues avec</span><span class="pct" style="color:var(--red);">45%</span></div>
+            <div class="attach-bar-bg"><div class="attach-bar-fill" style="width:45%;background:var(--red);"></div></div>
+            <div class="attach-note">Le point le plus faible ce mois-ci — un rappel à l'équipe peut suffire.</div>
+          </div>
+          <div class="attach-item">
+            <div class="attach-top"><span class="name">Révision → Purges frein/refroidissement</span><span class="pct" style="color:var(--amber);">38%</span></div>
+            <div class="attach-bar-bg"><div class="attach-bar-fill" style="width:38%;background:var(--amber);"></div></div>
+          </div>
+          <div class="attach-item">
+            <div class="attach-top"><span class="name">Climatisation → Filtre habitacle vendu avec</span><span class="pct" style="color:var(--amber);">50%</span></div>
+            <div class="attach-bar-bg"><div class="attach-bar-fill" style="width:50%;background:var(--amber);"></div></div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== 2. CHARGES RH ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="flow-step">
+      <div class="flow-num"><span class="dot">2</span>CE QUE VOUS AVEZ SORTI — VOS ÉQUIPES</div>
+    </div>
+    <details class="flow-card">
+      <summary>
+        <span class="flow-icon exp">👥</span>
+        <div class="flow-main">
+          <div class="flow-label">Charges RH — 3 techniciens</div>
+          <div class="flow-amount exp">− 12 200 €</div>
+          <div class="flow-sub">20,9% du chiffre d'affaires</div>
+        </div>
+        <span class="flow-chevron">Voir le détail <span class="arrow">▾</span></span>
+      </summary>
+      <div class="flow-detail">
+        <div class="tech-card">
+          <div class="tech-top">
+            <span class="tech-name"><span class="tech-avatar">K</span>Karim<span class="tech-best">Le plus rentable</span></span>
+            <span class="tech-rentab" style="color:var(--green);">82,4%</span>
+          </div>
+          <div class="tech-grid">
+            <div><b>24 500 €</b>CA généré</div>
+            <div><b>2 500 €</b>Salaire net</div>
+            <div><b>4 300 €</b>Coût total employeur</div>
+            <div><b>82,4%</b>Reste après son coût</div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-top">
+            <span class="tech-name"><span class="tech-avatar">S</span>Samir</span>
+            <span class="tech-rentab" style="color:var(--green);">81,7%</span>
+          </div>
+          <div class="tech-grid">
+            <div><b>21 900 €</b>CA généré</div>
+            <div><b>2 300 €</b>Salaire net</div>
+            <div><b>4 000 €</b>Coût total employeur</div>
+            <div><b>81,7%</b>Reste après son coût</div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-top">
+            <span class="tech-name"><span class="tech-avatar">M</span>Mourad</span>
+            <span class="tech-rentab" style="color:var(--red);">67,5%</span>
+          </div>
+          <div class="tech-grid">
+            <div><b>12 000 €</b>CA généré</div>
+            <div><b>2 300 €</b>Salaire net</div>
+            <div><b>3 900 €</b>Coût total employeur</div>
+            <div><b>67,5%</b>Reste après son coût</div>
+          </div>
+        </div>
+        <div class="attach-note" style="margin-top:8px;">Mourad est payé comme Samir, mais produit presque deux fois moins de chiffre d'affaires. Un vrai point à regarder ensemble.</div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== 3. CONSOMMATION PIÈCES ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="flow-step">
+      <div class="flow-num"><span class="dot">3</span>CE QUE VOUS AVEZ SORTI — VOS PIÈCES</div>
+    </div>
+    <details class="flow-card">
+      <summary>
+        <span class="flow-icon exp">🔩</span>
+        <div class="flow-main">
+          <div class="flow-label">Consommation de pièces</div>
+          <div class="flow-amount exp">− 20 000 €</div>
+          <div class="flow-sub">34,2% du chiffre d'affaires</div>
+        </div>
+        <span class="flow-chevron">Voir le détail <span class="arrow">▾</span></span>
+      </summary>
+      <div class="flow-detail">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;">Répartition par famille de pièces</div>
+        <div class="cat-row"><span class="cat-label">Freinage</span><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:100%;"></div></div><span class="cat-val">5 100 €</span></div>
+        <div class="cat-row"><span class="cat-label">Moteur / distribution</span><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:94%;"></div></div><span class="cat-val">4 800 €</span></div>
+        <div class="cat-row"><span class="cat-label">Suspension</span><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:67%;"></div></div><span class="cat-val">3 400 €</span></div>
+        <div class="cat-row"><span class="cat-label">Carrosserie / consommables</span><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:63%;"></div></div><span class="cat-val">3 200 €</span></div>
+        <div class="cat-row"><span class="cat-label">Autres</span><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:69%;"></div></div><span class="cat-val">3 500 €</span></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
+          <div class="detail-row">
+            <span class="name">Marge moyenne sur pièces</span>
+            <div class="value-block"><span class="value">31%</span></div>
+          </div>
+          <div class="detail-row">
+            <span class="name">Fournisseur principal</span>
+            <div class="value-block">
+              <span class="value">58% des achats</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <span class="name">Pièces commandées non facturées</span>
+            <div class="value-block">
+              <span class="value" style="color:var(--red);">750 €</span>
+              <span class="context">Dont 420 € sur les interventions de Mourad.</span>
+              <span class="context">SAV, perte ou erreur de commande — à vérifier avec l'équipe.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== 4. CHARGES FIXES ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="flow-step">
+      <div class="flow-num"><span class="dot">4</span>CE QUE VOUS AVEZ SORTI — VOS CHARGES FIXES</div>
+    </div>
+    <div class="simple-list">
+      <div class="detail-row">
+        <span class="name">Loyer / local</span>
+        <div class="value-block">
+          <span class="value" style="color:var(--red);">− 2 800 €</span>
+          <span class="context">Stable</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <span class="name">Abonnements<br>(logiciels, assurances...)</span>
+        <div class="value-block">
+          <span class="value" style="color:var(--red);">− 640 €</span>
+          <span class="context">Stable</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <span class="name">Eau, électricité, énergie</span>
+        <div class="value-block">
+          <span class="value" style="color:var(--red);">− 980 €</span>
+          <span class="context">+15% vs juillet</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <span class="name">Autres dépenses</span>
+        <div class="value-block">
+          <span class="value" style="color:var(--red);">− 230 €</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. FISCALITÉ ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="flow-step">
+      <div class="flow-num"><span class="dot">5</span>CE QUE VOUS AVEZ PAYÉ — L'ÉTAT</div>
+    </div>
+    <div class="simple-list">
+      <div class="detail-row">
+        <span class="name">URSSAF</span>
+        <div class="value-block">
+          <span class="value" style="color:var(--red);">− 5 370 €</span>
+          <span class="context" style="color:var(--green);font-weight:700;">Économie de 1 730 € grâce à nos optimisations.</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <span class="name">TVA reversée</span>
+        <div class="value-block"><span class="value" style="color:var(--red);">− 4 230 €</span></div>
+      </div>
+      <div class="detail-row">
+        <span class="name">Acompte impôt société</span>
+        <div class="value-block"><span class="value" style="color:var(--red);">− 1 000 €</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== RÉSULTAT NET ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="net-result">
+      <div class="lab">CE QU'IL VOUS RESTE VRAIMENT CE MOIS-CI</div>
+      <div class="num">10 950 €</div>
+      <div class="sub">C'est <b>+540 € de plus</b> que le mois dernier.</div>
+      <div class="net-recap">
+        <span><b>58 400 €</b>Rentré</span>
+        <span><b>47 450 €</b>Sorti</span>
+        <span><b>10 950 €</b>Net dans la poche</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ON A REPÉRÉ ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Ce qu'on a repéré ce mois-ci</h2>
+    </div>
+    <div class="talk-item" style="padding:12px 16px;">
+      <span class="talk-emoji">🛡️</span>
+      <p><b>Amortisseurs sans biellettes de barre stabilisatrice</b> dans 55% des cas — facile à corriger.</p>
+    </div>
+    <div class="talk-item" style="padding:12px 16px;">
+      <span class="talk-emoji">📦</span>
+      <p><b>750 € de pièces commandées non facturées</b> — plus de la moitié concerne les interventions de Mourad.</p>
+    </div>
+    <div class="talk-item" style="padding:12px 16px;">
+      <span class="talk-emoji">👍</span>
+      <p><b>Karim tire l'atelier vers le haut</b> — 81,4% de rentabilité.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ACTIONS ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Ce qu'on vous propose de faire ce mois-ci</h2>
+    </div>
+    <div class="action-card" style="display:flex;align-items:center;gap:14px;">
+      <span class="action-num">1</span>
+      <h4 style="flex:1;margin:0;">Vérifiez les 750 € de pièces non facturées (SAV, perte ou erreur ?)</h4>
+      <span class="action-gain">750 € à sécuriser</span>
+    </div>
+    <div class="action-card" style="display:flex;align-items:center;gap:14px;">
+      <span class="action-num">2</span>
+      <h4 style="flex:1;margin:0;">Rappel équipe : biellettes de barre stabilisatrice avec les amortisseurs</h4>
+      <span class="action-gain">+380 €/mois</span>
+    </div>
+    <div class="action-card" style="display:flex;align-items:center;gap:14px;">
+      <span class="action-num">3</span>
+      <h4 style="flex:1;margin:0;">Un point avec Mourad pour s'aligner sur le niveau de Karim</h4>
+      <span class="action-gain">Accompagnement</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PROTECTION ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <details class="flow-card is-green">
+      <summary>
+        <span class="flow-icon" style="background:rgba(255,255,255,0.6);">🛡️</span>
+        <div class="flow-main">
+          <div class="flow-label">Vous êtes protégé</div>
+          <div class="flow-sub">URSSAF, documents, fiscalité, protection personnelle</div>
+        </div>
+        <span class="flow-chevron">Voir le détail <span class="arrow">▾</span></span>
+      </summary>
+      <div class="flow-detail">
+        <div class="detail-row">
+          <span class="name">Audit URSSAF</span>
+          <div class="value-block">
+            <span class="value" style="color:var(--green);">À jour</span>
+            <span class="context">Dernier contrôle le 03/08.</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="name">Documents obligatoires</span>
+          <div class="value-block">
+            <span class="value" style="color:var(--green);">Conformes</span>
+            <span class="context">Tous affichés et à jour en atelier.</span>
+            <a href="#" class="doc-link">Consulter les documents →</a>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="name">Fiscalité</span>
+          <div class="value-block">
+            <span class="value" style="color:var(--green);">À jour</span>
+            <span class="context">Aucune anomalie détectée.</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="name">Protection du dirigeant</span>
+          <div class="value-block">
+            <span class="value" style="color:var(--green);">Vérifiée</span>
+            <span class="context">Statut personnel contrôlé en juillet.</span>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================== EXPERT ===================== -->
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="expert-card">
+      <div class="expert-avatar">A</div>
+      <div class="expert-text">
+        <p>« Bravo pour ce mois, surtout grâce à Karim. On regarde ensemble les 750 € de pièces non facturées côté Mourad, et on pense aux biellettes avec les amortisseurs. Je vous appelle cette semaine ! »</p>
+        <div class="sign">Votre expert ATLAS</div>
+        <div class="role">Sur WhatsApp quand vous voulez, comme chaque mois</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <div class="wrap">
+    <p>Ça, c'est ce que vous recevrez chaque mois avec ATLAS, dès votre premier mois — avec vos vrais chiffres, jusque dans le détail.</p>
+    <a class="btn" href="/">Demander mon audit gratuit</a>
+  </div>
+</div>
+
+<script>
+  // conserve l'identifiant commercial (?c=DUPONT) en passant au formulaire
+  (function(){
+    var qs = window.location.search;
+    if(!qs) return;
+    var links = document.querySelectorAll('a.btn');
+    for (var i = 0; i < links.length; i++){
+      links[i].setAttribute('href', links[i].getAttribute('href') + qs);
+    }
+  })();
+</script>
+
+</body>
+</html>

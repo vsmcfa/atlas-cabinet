@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+.env
+.env.local
+*.log
+
+# Jamais de secrets dans le dépôt : .env.example documente, .env contient.
+supabase/.temp/
+supabase/.branches/

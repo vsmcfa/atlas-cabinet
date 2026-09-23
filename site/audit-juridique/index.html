@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATLAS — Audit juridique complet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16305C;
+    --blue:#2A5FBF;
+    --blue-tint:#EAF2FC;
+    --bg:#FAFBFD;
+    --green:#1E9E6B;
+    --green-tint:#E7F7F0;
+    --red:#C0392B;
+    --red-tint:#FBEAE8;
+    --amber:#B7791F;
+    --amber-tint:#FDF3E3;
+    --ink:#202B3D;
+    --grey:#66707F;
+    --line:#EDF0F5;
+    --white:#FFFFFF;
+    --shadow: none;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px;}
+
+  header{background:var(--navy);padding:24px 0;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:24px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .month-badge{background:var(--blue);color:var(--white);font-weight:700;font-size:13px;letter-spacing:0.5px;padding:8px 16px;border-radius:100px;}
+
+  .greeting{background:var(--white);padding:26px 0 22px;border-bottom:1px solid var(--line);}
+  .greeting h1{font-size:21px;margin-bottom:6px;}
+  .greeting .garage-name{color:var(--blue);}
+  .greeting p{color:var(--grey);font-size:14.5px;max-width:600px;}
+  .demo-tag{display:inline-block;margin-top:12px;background:var(--blue-tint);color:var(--blue);font-size:11.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:5px 12px;border-radius:100px;}
+
+  /* ===== TOP RECAP KPI ===== */
+  .kpi-band{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:24px 0 4px;}
+  .kpi-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;}
+  .kpi-num{font-family:'Poppins',sans-serif;font-weight:800;font-size:28px;color:var(--navy);}
+  .kpi-num.green{color:var(--green);}
+  .kpi-lab{font-size:12px;color:var(--grey);font-weight:600;margin-top:4px;}
+
+  section{padding:26px 0 0;}
+  .light-head{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:10px;}
+
+  /* ===== CATEGORY CARDS (accordion) ===== */
+  details.cat-card{background:var(--white);border-radius:14px;border:1px solid var(--line);overflow:hidden;margin-bottom:12px;}
+  details.cat-card summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;gap:14px;}
+  details.cat-card summary::-webkit-details-marker{display:none;}
+  .cat-icon{font-size:19px;width:34px;height:34px;border-radius:9px;background:var(--blue-tint);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .cat-main{flex:1;}
+  .cat-label{font-size:14.5px;font-weight:700;color:var(--navy);}
+  .cat-sub{font-size:12.5px;color:var(--grey);margin-top:1px;}
+  .cat-status{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--green);white-space:nowrap;}
+  .cat-chev{color:#C3CBD8;font-size:13px;margin-left:6px;transition:transform .15s ease;}
+  details.cat-card[open] .cat-chev{transform:rotate(180deg);}
+
+  .cat-detail{padding:2px 18px 16px 66px;}
+  .check-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .check-row:last-child{border-bottom:none;}
+  .check-row .n{font-size:13.5px;color:var(--ink);font-weight:600;flex:1;}
+  .check-row .n small{display:block;font-weight:500;color:var(--grey);font-size:12px;margin-top:2px;}
+  .check-status{font-size:12.5px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+  .check-status.ok{color:var(--green);}
+  .check-status.warn{color:var(--amber);}
+
+  .doc-link{display:inline-block;margin-top:14px;font-size:12.5px;font-weight:700;color:var(--blue);text-decoration:none;}
+  .doc-link:hover{text-decoration:underline;}
+
+  .expert-line{background:var(--blue-tint);border-radius:14px;padding:16px 20px;font-size:14px;color:var(--navy);display:flex;gap:12px;align-items:flex-start;margin-top:8px;}
+  .expert-line .av{width:30px;height:30px;border-radius:50%;background:var(--blue);color:var(--white);font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .cta-band{padding:26px 0 40px;text-align:center;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;padding:13px 26px;border-radius:100px;background:var(--blue);color:var(--white);border:none;cursor:pointer;text-decoration:none;}
+
+  @media (max-width:640px){
+    .kpi-band{grid-template-columns:1fr;}
+    .cat-detail{padding:2px 14px 14px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span></div>
+    <span class="month-badge">Audit du 03/08/2026</span>
+  </div>
+</header>
+
+<div class="greeting">
+  <div class="wrap">
+    <h1><span class="garage-name">Garage JSB Auto</span> — Audit juridique complet</h1>
+    <p>Chaque point de conformité que la loi vous impose, vérifié sur place, avec la preuve à l'appui. Voici exactement ce qu'on a passé en revue.</p>
+    <span class="demo-tag">Exemple de démonstration</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="kpi-band">
+    <div class="kpi-card">
+      <div class="kpi-num">38</div>
+      <div class="kpi-lab">Points de conformité vérifiés</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num green">36</div>
+      <div class="kpi-lab">Conformes dès le 1er passage</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:var(--amber);">2</div>
+      <div class="kpi-lab">Corrigés depuis</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+
+    <details class="cat-card" open>
+      <summary>
+        <span class="cat-icon">👷</span>
+        <div class="cat-main">
+          <div class="cat-label">Droit du travail</div>
+          <div class="cat-sub">Inspection du travail, DUERP, affichages salariés</div>
+        </div>
+        <span class="cat-status">Conforme</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">DUERP<small>Document unique d'évaluation des risques professionnels, à jour et daté.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Registre du personnel<small>Tenu à jour pour les 3 techniciens.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Convention collective applicable<small>Services de l'automobile — affichée en atelier.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Affichage Code du travail<small>Harcèlement, discrimination, égalité pro, coordonnées inspection du travail.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Contrats de travail<small>Conformes à la convention collective, avenants à jour.</small></span><span class="check-status ok">✓ Fait</span></div>
+      </div>
+    </details>
+
+    <details class="cat-card">
+      <summary>
+        <span class="cat-icon">🧾</span>
+        <div class="cat-main">
+          <div class="cat-label">Information client & devis</div>
+          <div class="cat-sub">Code de la consommation, affichages tarifs, PIEC</div>
+        </div>
+        <span class="cat-status">Conforme</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">Affichage des tarifs<small>Taux horaire TTC et forfaits, visibles avant décision du client.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Affichage PIEC<small>Information sur les pièces issues de l'économie circulaire (réemploi).</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Ordres de réparation<small>Émis systématiquement avant intervention.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Notes détaillées<small>Décompte pièces/main-d'œuvre, HT/TTC, dès 25 € de réparation.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Affichage interdiction de fumer/vapoter</span><span class="check-status ok">✓ Fait</span></div>
+      </div>
+    </details>
+
+    <details class="cat-card">
+      <summary>
+        <span class="cat-icon">🛢️</span>
+        <div class="cat-main">
+          <div class="cat-label">Déchets dangereux (ICPE)</div>
+          <div class="cat-sub">Huiles, batteries, filtres, liquides — traçabilité complète</div>
+        </div>
+        <span class="cat-status" style="color:var(--amber);">2 points corrigés</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">Registre de suivi des déchets<small>Tenu à jour, conservé 3 ans comme l'exige la loi.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Bordereaux de suivi (BSD)<small>Via Trackdéchets, pour huiles, batteries et filtres.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Collecteurs agréés<small>Contrats à jour pour chaque flux de déchets.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Zone de stockage<small>Bac de rétention manquant sous le fût d'huiles usagées.</small></span><span class="check-status warn">⚠ Corrigé le 15/07</span></div>
+        <div class="check-row"><span class="n">Étiquetage des contenants<small>Codes déchets européens absents sur 2 fûts.</small></span><span class="check-status warn">⚠ Corrigé le 15/07</span></div>
+      </div>
+    </details>
+
+    <details class="cat-card">
+      <summary>
+        <span class="cat-icon">🧯</span>
+        <div class="cat-main">
+          <div class="cat-label">Sécurité de l'atelier</div>
+          <div class="cat-sub">Électricité, incendie, accessibilité</div>
+        </div>
+        <span class="cat-status">Conforme</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">Conformité électrique<small>Norme NF C15-100, dernier contrôle à jour.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Extincteurs<small>Adaptés aux risques de l'atelier, vérifiés annuellement.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Issues de secours<small>Dégagées et signalées conformément aux règles ERP.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Accessibilité PMR<small>Accueil et cheminement conformes.</small></span><span class="check-status ok">✓ Fait</span></div>
+      </div>
+    </details>
+
+    <details class="cat-card">
+      <summary>
+        <span class="cat-icon">🏛️</span>
+        <div class="cat-main">
+          <div class="cat-label">URSSAF & fiscalité</div>
+          <div class="cat-sub">Déclarations, cotisations, attestations</div>
+        </div>
+        <span class="cat-status">Conforme</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">Déclarations sociales (DSN)<small>Transmises chaque mois, aucun retard.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Cotisations URSSAF<small>À jour, attestation de vigilance disponible.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">TVA<small>Déclarations déposées et réglées dans les délais.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Liasse fiscale<small>Déposée dans les délais légaux.</small></span><span class="check-status ok">✓ Fait</span></div>
+      </div>
+    </details>
+
+    <details class="cat-card">
+      <summary>
+        <span class="cat-icon">🧑‍💼</span>
+        <div class="cat-main">
+          <div class="cat-label">Protection du dirigeant</div>
+          <div class="cat-sub">Statut, patrimoine personnel, prévoyance</div>
+        </div>
+        <span class="cat-status">Conforme</span>
+        <span class="cat-chev">▾</span>
+      </summary>
+      <div class="cat-detail">
+        <div class="check-row"><span class="n">Statut juridique<small>Adapté à l'activité et à la situation du dirigeant.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Séparation patrimoine pro/perso<small>Vérifiée, aucun risque identifié sur le patrimoine personnel.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Prévoyance du dirigeant<small>Couverture en cas d'arrêt de travail vérifiée.</small></span><span class="check-status ok">✓ Fait</span></div>
+        <div class="check-row"><span class="n">Rémunération<small>Structure optimisée compte tenu du statut.</small></span><span class="check-status ok">✓ Fait</span></div>
+      </div>
+    </details>
+
+    <a href="#" class="doc-link">Consulter l'ensemble des documents et justificatifs →</a>
+
+    <div class="expert-line">
+      <span class="av">A</span>
+      <span>« On a fait le tour complet, atelier compris. Deux petits points sur le stockage des déchets ont été corrigés en juillet, tout le reste était déjà bon. Vous êtes tranquille en cas de contrôle, quel qu'il soit. »</span>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <div class="wrap">
+    <a class="btn" href="/">Demander mon audit juridique gratuit</a>
+  </div>
+</div>
+
+<script>
+  // conserve l'identifiant commercial (?c=DUPONT) en passant au formulaire
+  (function(){
+    var qs = window.location.search;
+    if(!qs) return;
+    var links = document.querySelectorAll('a.btn');
+    for (var i = 0; i < links.length; i++){
+      links[i].setAttribute('href', links[i].getAttribute('href') + qs);
+    }
+  })();
+</script>
+
+</body>
+</html>

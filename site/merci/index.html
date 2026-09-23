@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATLAS — Informations bien reçues</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16305C;
+    --blue:#2A5FBF;
+    --green:#1E9E6B;
+    --green-tint:#E7F7F0;
+    --bg:#FAFBFD;
+    --ink:#202B3D;
+    --grey:#66707F;
+    --line:#E4E9F1;
+    --white:#FFFFFF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);font-size:21px;margin-bottom:10px;}
+  .wrap{max-width:620px;margin:0 auto;padding:0 24px;}
+  header{background:var(--navy);padding:24px 0;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:24px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .month-badge{background:var(--blue);color:var(--white);font-weight:700;font-size:13px;letter-spacing:0.5px;padding:8px 16px;border-radius:100px;}
+  section{padding:34px 0 56px;}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:30px 24px;}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:var(--green-tint);color:var(--green);font-weight:700;font-size:13px;padding:7px 14px;border-radius:100px;margin-bottom:16px;}
+  p{color:var(--grey);font-size:14.5px;margin-bottom:12px;}
+  p:last-child{margin-bottom:0;}
+  p b{color:var(--ink);}
+  .foot-note{text-align:center;font-size:12.5px;color:var(--grey);margin-top:18px;}
+  .ref{display:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:16px;font-size:13px;color:var(--grey);}
+  .ref b{font-family:'Poppins',sans-serif;color:var(--navy);letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span></div>
+    <span class="month-badge">Audit gratuit</span>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="card">
+      <div class="badge">✅ Informations bien reçues</div>
+      <h1>Merci, tout est arrivé de notre côté</h1>
+      <p>Votre bilan et vos réponses nous sont parvenus. <b>Sous 48h</b>, nous revenons vers vous par téléphone avec votre audit et une proposition adaptée à votre garage.</p>
+      <p>Vous n'avez rien d'autre à faire. Pour ajouter un document ou corriger une information, répondez simplement à l'e-mail que vous recevrez.</p>
+      <div class="ref" id="ref">Référence de votre dossier : <b id="refVal"></b><br>Conservez-la si vous nous rappelez.</div>
+    </div>
+    <p class="foot-note">ATLAS × Etchecom — Comptabilité réservée aux garagistes</p>
+  </div>
+</section>
+
+<script>
+  /* La référence est produite par le serveur au moment de l'enregistrement.
+     Sa présence prouve que les données sont bien écrites : cette page ne
+     s'atteint plus par une simple redirection optimiste. */
+  var ref = new URLSearchParams(window.location.search).get('ref');
+  if(ref && /^[A-Z0-9]{4,32}$/.test(ref)){
+    document.getElementById('refVal').textContent = ref;
+    document.getElementById('ref').style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Configuration locale Supabase CLI — projet ATLAS.
+project_id = "atlas"
+
+[functions.lead]
+# Le formulaire est public : aucun JWT n'est présenté. La protection repose sur
+# le honeypot, le temps de remplissage, la limitation de débit et le CORS.
+verify_jwt = false
+
+[functions.admin]
+# Console de consultation : pas de JWT Supabase, l'accès est contrôlé par le
+# mot de passe partagé vérifié dans le code, qui délivre un jeton signé.
+verify_jwt = false
+
+[functions.relance-mail]
+verify_jwt = false      # protégée par l'en-tête x-cron-secret
+
+[functions.purge]
+verify_jwt = false      # protégée par l'en-tête x-cron-secret

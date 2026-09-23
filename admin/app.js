@@ -1,0 +1,309 @@
+/* ------------------------------------------------------------------------
+   ATLAS — console de consultation des réponses.
+
+   Aucune clé, aucun secret dans ce fichier : il est public, comme toute page
+   servie par Netlify. Le mot de passe est vérifié par l'Edge Function, qui
+   renvoie un jeton de session signé, valable 8 h. Sans ce jeton, aucune donnée
+   n'est accessible — les tables Supabase sont en RLS sans policy.
+------------------------------------------------------------------------- */
+
+// ⚠️ À REMPLACER par l'URL de votre projet Supabase (cf. README).
+var API = 'https://VOTRE-PROJET.supabase.co/functions/v1/admin';
+
+// sessionStorage et non localStorage : la session tombe à la fermeture de
+// l'onglet. Sur un téléphone posé sur un comptoir, ça compte.
+var CLE = 'atlas-admin-jeton';
+
+var etat = { jeton: null, page: 0, total: 0, recherche: '', aTraiter: false, leads: [] };
+var minuteur = null;
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* ------------------------------------------------------------ transport */
+
+function appel(route, corps){
+  return fetch(API + '/' + route, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(corps || {})
+  }).then(function(r){
+    if(r.status === 401 && route !== 'session'){ deconnecter('Session expirée.'); throw { silencieux: true }; }
+    return r.json().catch(function(){ return {}; }).then(function(d){
+      if(!r.ok) throw { message: d.erreur || 'Erreur ' + r.status };
+      return d;
+    });
+  });
+}
+
+/* ------------------------------------------------------------ connexion */
+
+$('loginForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var btn = $('loginBtn'), err = $('loginError');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Vérification…';
+
+  appel('session', { motdepasse: $('mdp').value })
+    .then(function(d){
+      try { sessionStorage.setItem(CLE, JSON.stringify(d)); } catch(_){ /* navigation privée */ }
+      ouvrir(d);
+    })
+    .catch(function(ex){
+      err.textContent = (ex && ex.message) ||
+        'Connexion impossible. Vérifiez votre réseau et réessayez.';
+      err.style.display = 'block';
+      $('mdp').value = ''; $('mdp').focus();
+    })
+    .finally(function(){ btn.disabled = false; btn.textContent = 'Ouvrir'; });
+});
+
+function ouvrir(session){
+  etat.jeton = session.jeton;
+  $('gate').style.display = 'none';
+  $('entete').style.display = 'block';
+  $('console').style.display = 'block';
+  $('expire').textContent = 'Session jusqu’à ' +
+    new Date(session.expire_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  charger();
+}
+
+function deconnecter(motif){
+  try { sessionStorage.removeItem(CLE); } catch(_){}
+  etat.jeton = null;
+  fermerPanneau();
+  $('entete').style.display = 'none';
+  $('console').style.display = 'none';
+  $('gate').style.display = 'block';
+  if(motif){ $('loginError').textContent = motif; $('loginError').style.display = 'block'; }
+  $('mdp').value = '';
+}
+
+$('logoutBtn').addEventListener('click', function(){ deconnecter(null); });
+
+/* ------------------------------------------------------------- affichage */
+
+function dateCourte(iso){
+  var d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+function mo(octets){ return (octets / 1048576).toFixed(1).replace('.', ',') + ' Mo'; }
+
+/* Tout texte venant de la base est inséré par textContent, jamais par
+   innerHTML : un nom de garage contenant du HTML ne doit rien pouvoir faire. */
+function cell(texte, classe){
+  var td = document.createElement('td');
+  if(classe) td.className = classe;
+  td.textContent = texte == null ? '' : String(texte);
+  return td;
+}
+function tag(texte, classe){
+  var s = document.createElement('span');
+  s.className = 'tag ' + classe;
+  s.textContent = texte;
+  var td = document.createElement('td');
+  td.appendChild(s);
+  return td;
+}
+
+function charger(){
+  appel('leads', {
+    jeton: etat.jeton, page: etat.page,
+    recherche: etat.recherche, a_traiter: etat.aTraiter
+  }).then(function(d){
+    etat.leads = d.leads; etat.total = d.total;
+    dessiner(d);
+  }).catch(function(ex){
+    if(ex && ex.silencieux) return;
+    $('vide').textContent = (ex && ex.message) || 'Chargement impossible.';
+    $('vide').style.display = 'block';
+  });
+}
+
+function dessiner(d){
+  var tbody = $('lignes');
+  tbody.textContent = '';
+
+  $('compteur').textContent = d.total === 0 ? '' :
+    d.total + (d.total > 1 ? ' réponses' : ' réponse');
+
+  if(!d.leads.length){
+    $('vide').textContent = etat.recherche || etat.aTraiter
+      ? 'Aucune réponse ne correspond.'
+      : 'Aucune réponse pour l’instant.';
+    $('vide').style.display = 'block';
+  } else {
+    $('vide').style.display = 'none';
+  }
+
+  d.leads.forEach(function(l){
+    var tr = document.createElement('tr');
+    var ref = cell(l.reference); ref.className = 'ref nowrap';
+    tr.appendChild(ref);
+    tr.appendChild(cell(dateCourte(l.created_at), 'nowrap muted'));
+    tr.appendChild(cell(l.garage));
+    tr.appendChild(cell(l.dirigeant, 'opt'));
+    tr.appendChild(cell(l.telephone, 'opt nowrap'));
+    tr.appendChild(l.bilan_fourni ? tag('✓ ' + mo(l.bilan_taille || 0), 'ok') : tag('aucun', 'no'));
+    tr.appendChild(cell(l.commercial || '—', 'opt muted'));
+    tr.appendChild(
+      l.mail_statut === 'envoye' ? tag('parti', 'ok')
+      : l.mail_statut === 'echec' ? tag('échec', 'no')
+      : tag('en attente', 'wait'));
+    tr.addEventListener('click', function(){ detail(l); });
+    tbody.appendChild(tr);
+  });
+
+  var pages = Math.ceil(d.total / d.parPage);
+  $('prec').style.display = etat.page > 0 ? 'inline-flex' : 'none';
+  $('suiv').style.display = etat.page + 1 < pages ? 'inline-flex' : 'none';
+}
+
+/* --------------------------------------------------------------- détail */
+
+function ligne(dl, cle, valeur){
+  var dt = document.createElement('dt'); dt.textContent = cle;
+  var dd = document.createElement('dd');
+  if(valeur && valeur.href){
+    var a = document.createElement('a');
+    a.href = valeur.href; a.textContent = valeur.texte; dd.appendChild(a);
+  } else {
+    dd.textContent = valeur || '—';
+  }
+  dl.appendChild(dt); dl.appendChild(dd);
+}
+
+function detail(l){
+  var p = $('panel');
+  p.textContent = '';
+
+  var close = document.createElement('button');
+  close.className = 'close'; close.textContent = '×';
+  close.setAttribute('aria-label', 'Fermer');
+  close.addEventListener('click', fermerPanneau);
+  p.appendChild(close);
+
+  var h2 = document.createElement('h2'); h2.textContent = l.garage; p.appendChild(h2);
+  var sub = document.createElement('p');
+  sub.className = 'muted';
+  sub.textContent = 'Référence ' + l.reference + ' · reçu le ' + dateCourte(l.created_at);
+  p.appendChild(sub);
+
+  var dl = document.createElement('dl'); dl.className = 'kv';
+  ligne(dl, 'Dirigeant', l.dirigeant);
+  ligne(dl, 'Téléphone', { href: 'tel:' + String(l.telephone).replace(/\s/g, ''), texte: l.telephone });
+  ligne(dl, 'E-mail', { href: 'mailto:' + l.email, texte: l.email });
+  ligne(dl, 'Salariés', String(l.salaries));
+  ligne(dl, 'Commercial', l.commercial);
+  p.appendChild(dl);
+
+  var h3 = document.createElement('h3'); h3.textContent = 'CENTRES D’INTÉRÊT'; p.appendChild(h3);
+  var ul = document.createElement('ul');
+  (l.interets || []).forEach(function(i){
+    var li = document.createElement('li'); li.textContent = i; ul.appendChild(li);
+  });
+  p.appendChild(ul);
+
+  var h3b = document.createElement('h3'); h3b.textContent = 'BILAN COMPTABLE'; p.appendChild(h3b);
+  if(l.bilan_fourni){
+    var box = document.createElement('div'); box.className = 'box ok';
+    var nom = document.createElement('div');
+    nom.textContent = (l.bilan_nom_origine || 'bilan') + ' — ' + mo(l.bilan_taille || 0);
+    box.appendChild(nom);
+    var dl2 = document.createElement('button');
+    dl2.className = 'btn small'; dl2.textContent = 'Télécharger';
+    dl2.style.marginTop = '10px';
+    dl2.addEventListener('click', function(){
+      dl2.disabled = true; dl2.textContent = 'Préparation…';
+      appel('bilan', { jeton: etat.jeton, id: l.id })
+        .then(function(d){ window.location.href = d.url; })
+        .catch(function(ex){ if(!(ex && ex.silencieux)) alert((ex && ex.message) || 'Téléchargement impossible.'); })
+        .finally(function(){ dl2.disabled = false; dl2.textContent = 'Télécharger'; });
+    });
+    box.appendChild(dl2);
+    p.appendChild(box);
+  } else {
+    var no = document.createElement('div'); no.className = 'box no';
+    no.textContent = '⚠️ Aucun bilan joint — à réclamer lors du rappel.';
+    p.appendChild(no);
+  }
+
+  if(l.mail_statut !== 'envoye'){
+    var w = document.createElement('div');
+    w.className = 'box warn'; w.style.marginTop = '14px';
+    w.textContent = l.mail_statut === 'echec'
+      ? 'La notification par e-mail n’est pas partie. La réponse est bien enregistrée ici. Dernière erreur : ' + (l.mail_erreur || 'inconnue')
+      : 'Notification en attente d’envoi.';
+    p.appendChild(w);
+  }
+
+  $('overlay').style.display = 'block';
+  p.style.display = 'block';
+}
+
+function fermerPanneau(){
+  $('panel').style.display = 'none';
+  $('overlay').style.display = 'none';
+}
+$('overlay').addEventListener('click', fermerPanneau);
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') fermerPanneau(); });
+
+/* ----------------------------------------------------- recherche, pages */
+
+$('recherche').addEventListener('input', function(e){
+  clearTimeout(minuteur);
+  minuteur = setTimeout(function(){
+    etat.recherche = e.target.value.trim();
+    etat.page = 0;
+    charger();
+  }, 280);
+});
+
+$('filtreTraiter').addEventListener('click', function(){
+  etat.aTraiter = !etat.aTraiter;
+  $('filtreTraiter').classList.toggle('on', etat.aTraiter);
+  etat.page = 0;
+  charger();
+});
+
+$('prec').addEventListener('click', function(){ etat.page--; charger(); window.scrollTo(0, 0); });
+$('suiv').addEventListener('click', function(){ etat.page++; charger(); window.scrollTo(0, 0); });
+
+/* L'export passe par la fonction, qui renvoie le CSV : le jeton ne doit pas
+   se retrouver dans une URL (historique du navigateur, journaux serveur). */
+$('exportBtn').addEventListener('click', function(){
+  var b = $('exportBtn');
+  b.disabled = true; b.textContent = 'Export…';
+  fetch(API + '/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jeton: etat.jeton })
+  }).then(function(r){
+    if(r.status === 401){ deconnecter('Session expirée.'); return null; }
+    if(!r.ok) throw new Error('export');
+    return r.blob();
+  }).then(function(blob){
+    if(!blob) return;
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'atlas-leads-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }).catch(function(){
+    alert('Export impossible. Réessayez dans un instant.');
+  }).finally(function(){
+    b.disabled = false; b.textContent = 'Export CSV';
+  });
+});
+
+/* --------------------------------------------- reprise de session ouverte */
+
+try {
+  var brut = sessionStorage.getItem(CLE);
+  if(brut){
+    var s = JSON.parse(brut);
+    if(s && s.jeton && new Date(s.expire_at) > new Date()) ouvrir(s);
+    else sessionStorage.removeItem(CLE);
+  }
+} catch(_){ /* navigation privée, stockage bloqué : on reste sur l'écran de connexion */ }

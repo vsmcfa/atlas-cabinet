@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>ATLAS — Réponses au formulaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Mêmes jetons que le formulaire : navy, blue, Inter + Poppins, coins 14px,
+     aucune ombre. Le brief interdit toute refonte visuelle. */
+  :root{
+    --navy:#16305C; --blue:#2A5FBF; --blue-tint:#EAF2FC;
+    --green:#1E9E6B; --green-tint:#E7F7F0;
+    --red:#C0392B; --red-tint:#FBEAE8;
+    --amber:#B7791F; --amber-tint:#FDF6E3;
+    --bg:#FAFBFD; --ink:#202B3D; --grey:#66707F; --line:#E4E9F1; --white:#FFF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);}
+  a{color:var(--blue);}
+  header{background:var(--navy);padding:18px 0;}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px;}
+  .head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:21px;color:var(--white);}
+  .logo span{color:#6FA0F5;}
+  .head-row .who{color:#A9BEE4;font-size:12.5px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;
+       padding:11px 20px;border-radius:100px;background:var(--blue);color:var(--white);border:none;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:#1E4C99;}
+  .btn[disabled]{opacity:.55;cursor:default;}
+  .btn.ghost{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.35);padding:8px 14px;font-size:13px;}
+  .btn.ghost:hover{background:rgba(255,255,255,.1);}
+  .btn.small{padding:8px 15px;font-size:13px;}
+
+  /* ---------------------------------------------------------- connexion */
+  .gate{max-width:380px;margin:12vh auto;padding:0 20px;}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:26px 24px;}
+  .gate h1{font-size:19px;margin-bottom:6px;}
+  .gate p{color:var(--grey);font-size:13.5px;margin-bottom:18px;}
+  label{display:block;font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+  input[type=password],input[type=search]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+       font-family:inherit;font-size:16px;color:var(--ink);background:var(--bg);}
+  input:focus{outline:none;border-color:var(--blue);background:var(--white);}
+  .error{display:none;color:var(--red);background:var(--red-tint);border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:12px;}
+
+  /* -------------------------------------------------------------- liste */
+  main{display:none;padding:22px 0 60px;}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .bar input[type=search]{flex:1;min-width:210px;}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--line);
+        border-radius:100px;padding:9px 15px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;white-space:nowrap;}
+  .chip.on{background:var(--blue-tint);border-color:var(--blue);}
+  .count{color:var(--grey);font-size:13px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  th{text-align:left;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--grey);
+     padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg);white-space:nowrap;}
+  td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr{cursor:pointer;}
+  tbody tr:hover{background:var(--blue-tint);}
+  .ref{font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);letter-spacing:.5px;font-size:12.5px;}
+  .nowrap{white-space:nowrap;}
+  .muted{color:var(--grey);font-size:12.5px;}
+  .tag{display:inline-block;border-radius:100px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .tag.ok{background:var(--green-tint);color:var(--green);}
+  .tag.no{background:var(--red-tint);color:var(--red);}
+  .tag.wait{background:var(--amber-tint);color:var(--amber);}
+  .empty{text-align:center;padding:50px 20px;color:var(--grey);font-size:14px;}
+
+  /* ------------------------------------------------------------- détail */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(22,48,92,.35);z-index:10;}
+  .panel{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:var(--white);
+         z-index:11;overflow-y:auto;padding:24px;display:none;}
+  .panel h2{font-family:'Poppins',sans-serif;font-size:18px;color:var(--navy);margin-bottom:2px;}
+  .panel .close{position:absolute;top:18px;right:20px;font-size:22px;color:var(--grey);cursor:pointer;line-height:1;background:none;border:none;}
+  .kv{display:grid;grid-template-columns:96px 1fr;gap:8px 12px;margin:18px 0;font-size:13.5px;}
+  .kv dt{color:var(--grey);font-size:12.5px;}
+  .kv dd{font-weight:600;word-break:break-word;}
+  .panel h3{font-size:12.5px;font-weight:700;color:var(--navy);margin:18px 0 8px;}
+  .panel ul{padding-left:18px;font-size:13.5px;line-height:1.7;}
+  .box{border-radius:10px;padding:13px 15px;font-size:13.5px;}
+  .box.ok{background:var(--green-tint);}
+  .box.no{background:var(--red-tint);color:var(--red);font-weight:600;}
+  .box.warn{background:var(--amber-tint);color:var(--amber);}
+
+  @media (max-width:760px){
+    th.opt, td.opt{display:none;}
+    .kv{grid-template-columns:86px 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ------------------------------------------------------ écran de connexion -->
+<div class="gate" id="gate">
+  <div class="card">
+    <h1>Réponses au formulaire</h1>
+    <p>Espace réservé à l'équipe VSM. Les données affichées ici sont confidentielles.</p>
+    <form id="loginForm">
+      <label for="mdp">Mot de passe</label>
+      <input type="password" id="mdp" autocomplete="current-password" autofocus>
+      <button type="submit" class="btn" id="loginBtn" style="width:100%;margin-top:14px">Ouvrir</button>
+      <div class="error" id="loginError" role="alert"></div>
+    </form>
+  </div>
+</div>
+
+<!-- --------------------------------------------------------------- console -->
+<header id="entete" style="display:none">
+  <div class="wrap head-row">
+    <div class="logo">ATLAS<span>.</span> <span style="font-family:Inter;font-size:13px;font-weight:500;color:#A9BEE4">Réponses</span></div>
+    <div style="display:flex;gap:9px;align-items:center">
+      <span class="who" id="expire"></span>
+      <button class="btn ghost" id="exportBtn">Export CSV</button>
+      <button class="btn ghost" id="logoutBtn">Fermer</button>
+    </div>
+  </div>
+</header>
+
+<main id="console">
+  <div class="wrap">
+    <div class="bar">
+      <input type="search" id="recherche" placeholder="Rechercher un garage, un dirigeant, un e-mail, une référence…">
+      <span class="chip" id="filtreTraiter">⚠️ Mail non parti</span>
+      <span class="count" id="compteur"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Réf.</th><th>Reçu le</th><th>Garage</th>
+          <th class="opt">Dirigeant</th><th class="opt">Téléphone</th>
+          <th>Bilan</th><th class="opt">Commercial</th><th>Mail</th>
+        </tr>
+      </thead>
+      <tbody id="lignes"></tbody>
+    </table>
+    <div class="empty" id="vide" style="display:none"></div>
+    <div style="display:flex;justify-content:center;gap:10px;margin-top:18px">
+      <button class="btn small" id="prec" style="display:none">← Précédents</button>
+      <button class="btn small" id="suiv" style="display:none">Suivants →</button>
+    </div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<aside class="panel" id="panel" aria-live="polite"></aside>
+
+<script src="app.js"></script>
+</body>
+</html>
