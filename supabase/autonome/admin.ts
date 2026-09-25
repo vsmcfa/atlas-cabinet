@@ -174,6 +174,121 @@ async function limiteDebitDepassee(
   return depasse;
 }
 
+// Chaîne commune d'ajout d'une pièce jointe, partagée par le formulaire public
+// et la console d'administration : même validation des deux côtés.
+
+const TAILLE_MAX = 50 * 1024 * 1024;
+
+/** Le nom d'origine n'est jamais réutilisé comme chemin : seulement conservé pour l'affichage. */
+function assainirNom(nom: string): string {
+  return nom.normalize("NFKD").replace(/[^\w.\- ]+/g, "_").replace(/_{2,}/g, "_").slice(0, 120) || "document";
+}
+
+/** Étape 1 — autorise un envoi direct du navigateur vers le Storage. */
+async function urlUpload(taille: unknown, type: unknown): Promise<
+  { ok: true; chemin: string; url: string; signature: string }
+  | { ok: false; code: number; erreur: string; motif: string }
+> {
+  const t = Number(taille);
+  if (!Number.isFinite(t) || t <= 0 || t > TAILLE_MAX) {
+    return { ok: false, code: 413, motif: `taille annoncée ${taille}`,
+      erreur: `Le fichier dépasse ${TAILLE_MAX / 1048576} Mo.` };
+  }
+  const mime = String(type ?? "") as TypeAccepte;
+  const extension = TYPES_ACCEPTES[mime];
+  if (!extension) {
+    return { ok: false, code: 415, motif: `type annoncé « ${type} »`,
+      erreur: "Format non accepté. Envoyez un PDF ou une image (JPEG, PNG, HEIC)." };
+  }
+
+  const now = new Date();
+  const chemin = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/` +
+    `${crypto.randomUUID()}${extension}`;
+
+  const { data, error } = await admin().storage.from(BUCKET).createSignedUploadUrl(chemin);
+  if (error || !data) {
+    console.error("createSignedUploadUrl", error);
+    return { ok: false, code: 502, motif: String(error?.message), erreur: "Envoi de fichier indisponible. Réessayez dans un instant." };
+  }
+  return { ok: true, chemin, url: data.signedUrl, signature: await signer(chemin) };
+}
+
+/**
+ * Étape 2 — vérifie l'objet déposé puis l'enregistre sur le lead.
+ * La signature empêche d'associer à un lead un objet du Storage qu'on n'a pas
+ * soi-même obtenu à l'étape 1. Le type réel est relu dans les octets : rien de
+ * ce que le navigateur a déclaré n'est cru sur parole.
+ */
+async function enregistrerPiece(
+  leadId: string, chemin: string, signature: string, nom: unknown,
+  origine: "formulaire" | "console",
+): Promise<{ ok: true; id: string } | { ok: false; code: number; erreur: string; motif: string }> {
+  const sb = admin();
+
+  if (!await signatureValide(chemin, signature)) {
+    return { ok: false, code: 400, motif: `signature de chemin invalide (${chemin})`,
+      erreur: "Le fichier joint n'a pas pu être vérifié. Retirez-le et réessayez." };
+  }
+
+  const verif = await verifierObjet(chemin);
+  if (!verif.ok) {
+    await sb.storage.from(BUCKET).remove([chemin]);        // on ne garde pas un fichier refusé
+    return { ok: false, code: 415, motif: verif.motif, erreur: verif.erreur };
+  }
+
+  const propre = assainirNom(
+    typeof nom === "string" && nom.trim() ? nom.trim() : `document${chemin.slice(chemin.lastIndexOf("."))}`,
+  );
+
+  const { data, error } = await sb.from("pieces_jointes")
+    .insert({ lead_id: leadId, chemin, nom: propre, taille: verif.taille, type: verif.type, origine })
+    .select("id").single();
+
+  if (error || !data) {
+    await sb.storage.from(BUCKET).remove([chemin]);        // pas de fichier orphelin
+    console.error("insert pieces_jointes", error);
+    return { ok: false, code: 500, motif: String(error?.message), erreur: "Le document n'a pas pu être enregistré." };
+  }
+  return { ok: true, id: data.id };
+}
+
+/** Existence, taille réelle et type réel en une seule requête Range. */
+async function verifierObjet(chemin: string): Promise<
+  { ok: true; taille: number; type: string } | { ok: false; motif: string; erreur: string }
+> {
+  const sb = admin();
+  const { data: signee, error } = await sb.storage.from(BUCKET).createSignedUrl(chemin, 60);
+  if (error || !signee) {
+    return { ok: false, motif: `objet introuvable : ${error?.message ?? "sans détail"}`,
+      erreur: "Le fichier n'est pas arrivé jusqu'à nous. Réessayez." };
+  }
+
+  const r = await fetch(signee.signedUrl, { headers: { range: "bytes=0-63" } });
+  if (!r.ok && r.status !== 206) {
+    return { ok: false, motif: `lecture impossible (HTTP ${r.status})`, erreur: "Le fichier n'a pas pu être lu. Réessayez." };
+  }
+
+  const entete = new Uint8Array(await r.arrayBuffer());
+  const taille = Number(r.headers.get("content-range")?.split("/")[1] ?? r.headers.get("content-length") ?? 0);
+
+  if (!Number.isFinite(taille) || taille <= 0) {
+    return { ok: false, motif: "taille réelle indéterminable", erreur: "Le fichier semble vide." };
+  }
+  if (taille > TAILLE_MAX) {
+    return { ok: false, motif: `taille réelle ${taille}`, erreur: `Le fichier dépasse ${TAILLE_MAX / 1048576} Mo.` };
+  }
+
+  const type = detecterType(entete);
+  if (!type) {
+    return {
+      ok: false,
+      motif: `signature inconnue : ${[...entete.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join(" ")}`,
+      erreur: "Ce fichier n'est pas un PDF ni une image.",
+    };
+  }
+  return { ok: true, taille, type };
+}
+
 // Consultation des réponses — backend de la page d'administration.
 //
 // Accès par MOT DE PASSE UNIQUE PARTAGÉ (choix dirigeant). Le mot de passe
@@ -187,8 +302,12 @@ async function limiteDebitDepassee(
 //   POST /admin/reponse  { jeton_lead }        -> { lead }   (lien du mail)
 //   POST /admin/session  { motdepasse }        -> { jeton, expire_at }
 //   POST /admin/leads    { jeton, recherche? } -> { leads, total }
-//   POST /admin/bilan    { jeton, id }         -> { url }      (signée 1 h)
+//   POST /admin/bilan    { jeton, piece_id }   -> { url }      (signée 1 h)
 //   POST /admin/export   { jeton }             -> CSV
+//
+//   POST /admin/piece-url        { jeton, taille, type }             -> URL d'envoi
+//   POST /admin/piece-ajouter    { jeton, lead_id, chemin, … }       -> { piece }
+//   POST /admin/piece-supprimer  { jeton, piece_id }                 -> { ok }
 
 const SESSION_HEURES = 8;
 const MAX_TENTATIVES_10MIN = 10;
@@ -205,13 +324,16 @@ Deno.serve(async (req) => {
     const corps = await req.json().catch(() => ({}));
     // Le bilan s'ouvre soit avec une session, soit avec le jeton de la fiche
     // reçue par mail — mais uniquement pour CETTE fiche (vérifié plus bas).
-    const parLien = route === "bilan" && await jetonLeadValide(corps.jeton_lead, corps.id);
+    const parLien = route === "bilan" && await jetonLeadValide(corps.jeton_lead, corps.lead_id);
     if (!parLien && !await jetonValide(corps.jeton)) {
       return json(req, { erreur: "Session expirée. Reconnectez-vous." }, 401);
     }
     if (route === "leads") return await listerLeads(req, corps);
-    if (route === "bilan") return await lienBilan(req, corps);
+    if (route === "bilan") return await lienPiece(req, corps);
     if (route === "export") return await exporterCsv(req);
+    if (route === "piece-url") return await urlEnvoiPiece(req, corps);
+    if (route === "piece-ajouter") return await ajouterPiece(req, corps);
+    if (route === "piece-supprimer") return await supprimerPiece(req, corps);
     return json(req, { erreur: "Route inconnue." }, 404);
   } catch (e) {
     console.error(`[admin/${route}]`, e);
@@ -312,16 +434,17 @@ async function jetonLeadValide(jeton: unknown, idDemande: unknown): Promise<bool
 
 const CHAMPS =
   "id, reference, created_at, garage, dirigeant, telephone, email, salaries, interets, " +
-  "bilan_fourni, bilan_nom_origine, bilan_taille, commercial, mail_statut, mail_erreur";
+  "bilan_fourni, nb_pieces, commercial, mail_statut, mail_erreur, " +
+  "pieces_jointes(id, nom, taille, type, origine, created_at)";
 
 // `CHAMPS` étant une constante calculée, supabase-js ne peut pas en déduire la
 // forme des lignes : on la déclare une fois ici.
 type LeadLigne = {
   id: string; reference: string; created_at: string;
   garage: string; dirigeant: string; telephone: string; email: string; salaries: number;
-  interets: string[]; bilan_fourni: boolean; bilan_nom_origine: string | null;
-  bilan_taille: number | null; commercial: string | null;
-  mail_statut: string; mail_erreur: string | null;
+  interets: string[]; bilan_fourni: boolean; nb_pieces: number;
+  commercial: string | null; mail_statut: string; mail_erreur: string | null;
+  pieces_jointes: { id: string; nom: string; taille: number; type: string; origine: string; created_at: string }[];
 };
 
 async function listerLeads(req: Request, corps: Record<string, unknown>): Promise<Response> {
@@ -354,20 +477,91 @@ async function listerLeads(req: Request, corps: Record<string, unknown>): Promis
   return json(req, { leads: data ?? [], total: count ?? 0, page, parPage });
 }
 
-/* ---------------------------------------------- téléchargement du bilan */
+/* ------------------------------------------------- pièces jointes */
 
-async function lienBilan(req: Request, corps: Record<string, unknown>): Promise<Response> {
+async function lienPiece(req: Request, corps: Record<string, unknown>): Promise<Response> {
   const sb = admin();
-  const { data: lead, error } = await sb.from("leads")
-    .select("bilan_chemin, bilan_nom_origine").eq("id", String(corps.id ?? "")).maybeSingle();
+  const { data: piece, error } = await sb.from("pieces_jointes")
+    .select("chemin, nom, lead_id").eq("id", String(corps.piece_id ?? "")).maybeSingle();
 
-  if (error || !lead?.bilan_chemin) return json(req, { erreur: "Aucun bilan pour ce lead." }, 404);
+  if (error || !piece) return json(req, { erreur: "Document introuvable." }, 404);
+  // Un jeton de mail n'ouvre que les pièces de SA fiche.
+  if (corps.lead_id && piece.lead_id !== String(corps.lead_id)) {
+    return json(req, { erreur: "Document introuvable." }, 404);
+  }
 
   const { data, error: e2 } = await sb.storage.from(BUCKET)
-    .createSignedUrl(lead.bilan_chemin, 3600, { download: lead.bilan_nom_origine ?? "bilan" });
+    .createSignedUrl(piece.chemin, 3600, { download: piece.nom });
   if (e2 || !data) return json(req, { erreur: "Lien indisponible." }, 500);
-
   return json(req, { url: data.signedUrl });
+}
+
+/** Étape 1 de l'ajout depuis la console : autorise l'envoi vers le Storage. */
+async function urlEnvoiPiece(req: Request, corps: Record<string, unknown>): Promise<Response> {
+  const sb = admin();
+  if (await limiteDebitDepassee(sb, req, "admin-piece-url", 60)) {
+    return json(req, { erreur: "Trop d'envois. Patientez quelques minutes." }, 429);
+  }
+  const r = await urlUpload(corps.taille, corps.type);
+  if (!r.ok) {
+    await journaliserRejet(sb, "type_fichier", `console : ${r.motif}`, req, corps);
+    return json(req, { erreur: r.erreur }, r.code);
+  }
+  return json(req, { chemin: r.chemin, url: r.url, signature: r.signature });
+}
+
+/** Étape 2 : vérifie le fichier déposé et le rattache à la fiche. */
+async function ajouterPiece(req: Request, corps: Record<string, unknown>): Promise<Response> {
+  const sb = admin();
+  const leadId = String(corps.lead_id ?? "");
+
+  const { data: lead } = await sb.from("leads").select("id, reference").eq("id", leadId).maybeSingle();
+  if (!lead) return json(req, { erreur: "Réponse introuvable." }, 404);
+
+  const r = await enregistrerPiece(
+    leadId, String(corps.chemin ?? ""), String(corps.signature ?? ""), corps.nom, "console",
+  );
+  if (!r.ok) {
+    await journaliserRejet(sb, "type_fichier", `console : ${r.motif}`, req, corps);
+    return json(req, { erreur: r.erreur }, r.code);
+  }
+
+  const { data: piece } = await sb.from("pieces_jointes")
+    .select("id, nom, taille, type, origine, created_at").eq("id", r.id).single();
+  console.log(`[admin] document ajouté au lead ${lead.reference} : ${piece?.nom}`);
+  return json(req, { ok: true, piece });
+}
+
+/** Suppression définitive : le fichier quitte aussi le Storage. */
+async function supprimerPiece(req: Request, corps: Record<string, unknown>): Promise<Response> {
+  const sb = admin();
+  const { data: piece } = await sb.from("pieces_jointes")
+    .select("id, chemin, nom, lead_id").eq("id", String(corps.piece_id ?? "")).maybeSingle();
+
+  if (!piece) return json(req, { erreur: "Document introuvable." }, 404);
+
+  // Le fichier d'abord : une ligne sans fichier est récupérable, un fichier
+  // sans ligne est un orphelin que plus personne ne relie à son dossier.
+  const { error: eStorage } = await sb.storage.from(BUCKET).remove([piece.chemin]);
+  if (eStorage) {
+    console.error("suppression Storage", eStorage);
+    return json(req, { erreur: "Le fichier n'a pas pu être supprimé. Réessayez." }, 500);
+  }
+
+  const { error } = await sb.from("pieces_jointes").delete().eq("id", piece.id);
+  if (error) {
+    console.error("suppression pieces_jointes", error);
+    return json(req, { erreur: "Le document a été retiré du stockage mais la fiche n'a pas pu être mise à jour." }, 500);
+  }
+
+  // Une suppression définitive laisse une trace : qui a supprimé quoi, et quand.
+  await sb.from("alertes").insert({
+    niveau: "info", sujet: "Document supprimé",
+    detail: `« ${piece.nom} » supprimé définitivement depuis la console (IP ${ipDe(req) ?? "?"}).`,
+    lead_id: piece.lead_id, traitee: true,
+  });
+
+  return json(req, { ok: true });
 }
 
 /* ----------------------------------------------------------- export CSV */
@@ -385,14 +579,14 @@ async function exporterCsv(req: Request): Promise<Response> {
 
   const colonnes = [
     "Référence", "Date", "Garage", "Dirigeant", "Téléphone", "E-mail", "Salariés",
-    "Centres d'intérêt", "Bilan", "Commercial", "Statut mail",
+    "Centres d'intérêt", "Documents", "Commercial", "Statut mail",
   ];
   const lignes = (data ?? []).map((l) => [
     l.reference,
     new Date(l.created_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }),
     l.garage, l.dirigeant, l.telephone, l.email, l.salaries,
     (l.interets ?? []).join(" | "),
-    l.bilan_fourni ? (l.bilan_nom_origine ?? "oui") : "AUCUN BILAN",
+    (l.pieces_jointes ?? []).map((p) => p.nom).join(" | ") || "AUCUN DOCUMENT",
     l.commercial ?? "", l.mail_statut,
   ].map(cellule).join(";"));
 

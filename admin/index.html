@@ -95,6 +95,34 @@
   .box.no{background:var(--red-tint);color:var(--red);font-weight:600;}
   .box.warn{background:var(--amber-tint);color:var(--amber);}
 
+  /* ------------------------------------------------- pièces jointes */
+  .piece{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
+  .piece:first-of-type{border-top:none;}
+  .piece .p-nom{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .piece .p-meta{font-size:11.5px;color:var(--grey);white-space:nowrap;}
+  .piece .p-act{background:none;border:none;font-family:inherit;font-size:12px;font-weight:600;
+      cursor:pointer;padding:5px 7px;white-space:nowrap;}
+  .piece .p-voir{color:var(--blue);}
+  .piece .p-suppr{color:var(--red);}
+  .ajout{margin-top:14px;}
+  .ajout input[type=file]{display:none;}
+
+  /* ------------------------------------------------ boîte de confirmation */
+  .modal{display:none;position:fixed;inset:0;z-index:30;align-items:center;justify-content:center;
+      background:rgba(22,48,92,.45);padding:24px;}
+  .modal.on{display:flex;}
+  .modal .boite{background:var(--white);border-radius:14px;padding:26px 24px;max-width:420px;width:100%;}
+  .modal h3{font-family:'Poppins',sans-serif;font-size:17px;color:var(--navy);margin-bottom:8px;}
+  .modal p{font-size:13.5px;color:var(--grey);line-height:1.6;margin-bottom:6px;}
+  .modal .cible{font-size:13.5px;font-weight:700;color:var(--ink);background:var(--bg);
+      border-radius:10px;padding:11px 13px;margin:12px 0 18px;word-break:break-all;}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+  .btn.danger{background:var(--red);}
+  .btn.danger:hover{background:#A03123;}
+  .btn.neutre{background:var(--bg);color:var(--navy);border:1px solid var(--line);}
+  .btn.neutre:hover{background:var(--line);}
+
   /* ---------------------------------------------------- page des liens */
   #liens{display:none;padding-bottom:40px;}
   .bloc{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:22px 22px 8px;margin-bottom:16px;}
@@ -276,6 +304,18 @@
 
   </div>
 </section>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitre">
+  <div class="boite">
+    <h3 id="modalTitre">Supprimer ce document ?</h3>
+    <p>Cette suppression est définitive. Le fichier sera effacé du stockage et ne pourra pas être récupéré.</p>
+    <div class="cible" id="modalCible"></div>
+    <div class="actions">
+      <button class="btn small neutre" id="modalAnnuler">Annuler</button>
+      <button class="btn small danger" id="modalConfirmer">Supprimer définitivement</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlay"></div>
 <aside class="panel" id="panel" aria-live="polite"></aside>

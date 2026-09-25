@@ -28,8 +28,11 @@ const leads = [
     garage: 'Garage Martin & Fils', dirigeant: 'Paul Martin',
     telephone: '06 12 34 56 78', email: 'contact@garage-martin.fr', salaries: 4,
     interets: ['Avoir un expert-comptable plus réactif', 'Savoir où mon garage peut économiser et combien'],
-    bilan_fourni: true, bilan_nom_origine: 'bilan-2025.pdf', bilan_taille: 12_400_000,
-    commercial: 'DUPONT', mail_statut: 'envoye', mail_erreur: null,
+    bilan_fourni: true, nb_pieces: 2, commercial: 'DUPONT', mail_statut: 'envoye', mail_erreur: null,
+    pieces_jointes: [
+      { id: randomUUID(), nom: 'bilan-2025.pdf', taille: 12_400_000, type: 'application/pdf', origine: 'formulaire', created_at: new Date().toISOString() },
+      { id: randomUUID(), nom: 'liasse-fiscale.pdf', taille: 2_300_000, type: 'application/pdf', origine: 'console', created_at: new Date().toISOString() },
+    ],
   },
   {
     id: randomUUID(), reference: 'E5F6A7B8',
@@ -37,7 +40,7 @@ const leads = [
     garage: 'Carrosserie du Pont', dirigeant: 'Sonia Belkacem',
     telephone: '07 98 76 54 32', email: 'sonia@carrosserie-pont.fr', salaries: 11,
     interets: ['Diminuer légalement mes prélèvements Urssaf et fiscaux'],
-    bilan_fourni: false, bilan_nom_origine: null, bilan_taille: null,
+    bilan_fourni: false, nb_pieces: 0, pieces_jointes: [],
     commercial: 'DUPONT', mail_statut: 'envoye', mail_erreur: null,
   },
   {
@@ -46,8 +49,10 @@ const leads = [
     garage: 'Auto Services 93', dirigeant: 'Kevin Nguyen',
     telephone: '06 55 44 33 22', email: 'k.nguyen@as93.fr', salaries: 2,
     interets: ['Développer davantage mes activités', 'Obtenir plus de chiffre d’affaires chaque mois'],
-    bilan_fourni: true, bilan_nom_origine: 'bilan-scan.jpg', bilan_taille: 3_100_000,
-    commercial: null, mail_statut: 'echec',
+    bilan_fourni: true, nb_pieces: 1, commercial: null, mail_statut: 'echec',
+    pieces_jointes: [
+      { id: randomUUID(), nom: 'bilan-scan.jpg', taille: 3_100_000, type: 'image/jpeg', origine: 'formulaire', created_at: new Date().toISOString() },
+    ],
     mail_erreur: 'Brevo 401 : Key not found — démonstration de la file de reprise',
   },
 ]
@@ -88,8 +93,12 @@ createServer(async (req, res) => {
       id: randomUUID(), reference, created_at: new Date().toISOString(),
       garage: corps.garage, dirigeant: corps.dirigeant, telephone: corps.telephone,
       email: corps.email, salaries: corps.salaries, interets: corps.interet,
-      bilan_fourni: !!corps.bilan_chemin, bilan_nom_origine: corps.bilan_nom ?? null,
-      bilan_taille: corps.bilan_chemin ? 1_048_576 : null,
+      bilan_fourni: (corps.pieces || []).length > 0,
+      nb_pieces: (corps.pieces || []).length,
+      pieces_jointes: (corps.pieces || []).map((p) => ({
+        id: randomUUID(), nom: p.nom, taille: 1_048_576,
+        type: 'application/pdf', origine: 'formulaire', created_at: new Date().toISOString(),
+      })),
       commercial: corps.commercial || null, mail_statut: 'envoye', mail_erreur: null,
     })
     console.log(`  → lead reçu : ${corps.garage} (réf. ${reference})`)
@@ -115,6 +124,35 @@ createServer(async (req, res) => {
       return json(res, { leads: liste, total: liste.length, page: 0, parPage: 50 })
     }
     if (quoi === 'bilan') return json(res, { url: `${API}/faux-bilan` })
+    if (quoi === 'piece-url') {
+      return json(res, { chemin: `2026/09/${randomUUID()}.pdf`, url: `${API}/faux-upload`, signature: 'demo' })
+    }
+    if (quoi === 'piece-ajouter') {
+      const lead = leads.find((l) => l.id === corps.lead_id)
+      if (!lead) return json(res, { erreur: 'Réponse introuvable.' }, 404)
+      const piece = {
+        id: randomUUID(), nom: corps.nom, taille: 1_500_000,
+        type: 'application/pdf', origine: 'console', created_at: new Date().toISOString(),
+      }
+      lead.pieces_jointes.push(piece)
+      lead.nb_pieces = lead.pieces_jointes.length
+      lead.bilan_fourni = lead.nb_pieces > 0
+      console.log(`  → document ajouté à ${lead.garage} : ${piece.nom}`)
+      return json(res, { ok: true, piece })
+    }
+    if (quoi === 'piece-supprimer') {
+      for (const l of leads) {
+        const i = l.pieces_jointes.findIndex((p) => p.id === corps.piece_id)
+        if (i >= 0) {
+          console.log(`  → document supprimé de ${l.garage} : ${l.pieces_jointes[i].nom}`)
+          l.pieces_jointes.splice(i, 1)
+          l.nb_pieces = l.pieces_jointes.length
+          l.bilan_fourni = l.nb_pieces > 0
+          return json(res, { ok: true })
+        }
+      }
+      return json(res, { erreur: 'Document introuvable.' }, 404)
+    }
     if (quoi === 'export') {
       res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8', ...CORS })
       return res.end('﻿' + ['Référence;Garage;Dirigeant;E-mail',
@@ -123,7 +161,7 @@ createServer(async (req, res) => {
   }
   if (route === '/faux-bilan') {
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', ...CORS })
-    return res.end('Démonstration : en production, ce lien sert le vrai PDF depuis Supabase Storage.')
+    return res.end('Démonstration : en production, ce lien sert le vrai document depuis Supabase Storage.')
   }
   json(res, { erreur: 'route inconnue' }, 404)
 }).listen(4002)

@@ -67,10 +67,10 @@
   .upload-zone .txt{font-size:13.5px;color:var(--navy);font-weight:600;}
   .upload-zone .sub{font-size:12px;color:var(--grey);margin-top:4px;}
   .upload-zone input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
-  .file-selected{display:none;align-items:center;gap:10px;background:var(--green-tint);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px;color:var(--navy);font-weight:600;}
+  .file-selected{display:flex;align-items:center;gap:10px;background:var(--green-tint);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:13.5px;color:var(--navy);font-weight:600;}
   .file-selected .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .file-selected .size{color:var(--grey);font-weight:500;font-size:12px;flex-shrink:0;}
-  .file-selected .remove{margin-left:auto;color:var(--red);font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;}
+  .file-selected .remove{margin-left:auto;color:var(--red);font-weight:700;cursor:pointer;font-size:12px;flex-shrink:0;background:none;border:none;font-family:inherit;}
 
   .confidentiality{background:var(--blue-tint);border-radius:12px;padding:14px 16px;margin:20px 0;font-size:12.5px;color:var(--navy);line-height:1.6;}
 
@@ -185,16 +185,11 @@
           <div class="hint" style="margin:-4px 0 10px">Facultatif — vous pouvez nous l'envoyer plus tard, mais le joindre maintenant nous permet de chiffrer votre situation réelle dès le premier retour.</div>
           <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Joindre votre bilan comptable">
             <div class="icon">📎</div>
-            <div class="txt">Cliquez ou déposez votre fichier ici</div>
+            <div class="txt">Cliquez ou déposez vos fichiers ici</div>
             <div class="sub">PDF de préférence — une photo lisible convient si vous n'avez que le papier. Les photos sont optimisées automatiquement.</div>
-            <input type="file" id="bilanFile" name="bilan" accept="application/pdf,image/*">
+            <input type="file" id="bilanFile" name="bilan" accept="application/pdf,image/*" multiple>
           </div>
-          <div class="file-selected" id="fileSelected">
-            <span>📄</span>
-            <span class="name" id="fileName"></span>
-            <span class="size" id="fileSize"></span>
-            <span class="remove" id="removeFile">Retirer</span>
-          </div>
+          <div id="fileList"></div>
         </div>
 
         <div class="confidentiality">
@@ -238,16 +233,12 @@ var COTE_MAX     = 2600;               // px sur le plus grand côté
 var form         = document.getElementById('atlasForm');
 var uploadZone   = document.getElementById('uploadZone');
 var fileInput    = document.getElementById('bilanFile');
-var fileSelected = document.getElementById('fileSelected');
-var fileNameEl   = document.getElementById('fileName');
-var fileSizeEl   = document.getElementById('fileSize');
 var errorEl      = document.getElementById('formError');
 var submitBtn    = document.getElementById('submitBtn');
 var progress     = document.getElementById('progress');
 var progressBar  = document.getElementById('progressBar');
 var progressTxt  = document.getElementById('progressTxt');
 
-var fichierPret = null;                // fichier réellement envoyé (compressé ou non)
 var ouvertureLe = Date.now();          // sert au contrôle « rempli en moins de 3 s »
 var envoiEnCours = false;
 
@@ -283,13 +274,15 @@ function verrouiller(actif, libelle){
   submitBtn.textContent = libelle;
 }
 
-/* ------------------------------------------------------- choix du fichier */
+/* ----------------------------------------------------- choix des fichiers */
+
+var fichiers = [];                        // fichiers retenus, déjà compressés
+var MAX_FICHIERS = 10;
 
 function resetFile(){
-  fichierPret = null;
+  fichiers = [];
   fileInput.value = '';
-  fileSelected.style.display = 'none';
-  uploadZone.style.display = 'block';
+  dessinerFichiers();
 }
 
 /* Contrôle du type RÉEL par les octets d'en-tête, avant même de téléverser.
@@ -364,19 +357,36 @@ function compresserImage(file){
   });
 }
 
-function handleFile(file){
+/** Traite les fichiers choisis, un par un, et les ajoute à la liste. */
+function ajouterFichiers(liste){
   clearError();
-  lireTypeReel(file).then(function(type){
+  var reste = MAX_FICHIERS - fichiers.length;
+  if(reste <= 0){
+    showError('Vous avez déjà joint ' + MAX_FICHIERS + ' documents.');
+    return;
+  }
+  var aTraiter = [].slice.call(liste, 0, reste);
+
+  var suite = Promise.resolve();
+  aTraiter.forEach(function(file){
+    suite = suite.then(function(){ return traiterUn(file); });
+  });
+  suite.then(function(){
+    hideProgress();
+    fileInput.value = '';               // permet de rechoisir le même fichier
+    dessinerFichiers();
+  });
+}
+
+function traiterUn(file){
+  return lireTypeReel(file).then(function(type){
     if(!type){
-      resetFile();
-      showError('Ce fichier n\u2019est ni un PDF ni une image. Envoyez votre bilan en PDF, ou une photo lisible.');
+      showError('« ' + file.name + ' » n\u2019est ni un PDF ni une image. Il n\u2019a pas été ajouté.');
       return;
     }
-    // Image trop lourde : on l'allège avant l'envoi, sans rien demander.
     if(type !== 'application/pdf' && file.size > SEUIL_COMPR){
-      setProgress(8, 'Optimisation de votre photo\u2026');
+      setProgress(8, 'Optimisation de ' + file.name + '\u2026');
       return compresserImage(file).then(function(allege){
-        hideProgress();
         retenir(allege || file, allege ? file.size : 0);
       });
     }
@@ -384,22 +394,51 @@ function handleFile(file){
   });
 }
 
-/** Retient le fichier à envoyer. `avant` > 0 signale une compression. */
+/** Retient un fichier. `avant` > 0 signale une compression. */
 function retenir(file, avant){
   if(file.size > MAX_OCTETS){
-    resetFile();
-    showError('Ce fichier fait ' + formatSize(file.size) +
-      '. La limite est de 50 Mo \u2014 envoyez seulement les pages utiles du bilan.');
+    showError('« ' + file.name + ' » fait ' + formatSize(file.size) +
+      '. La limite est de 50 Mo par document.');
     return;
   }
-  fichierPret = file;
-  clearError();
-  fileNameEl.textContent = file.name;
-  fileSizeEl.textContent = avant
-    ? formatSize(avant) + ' \u2192 ' + formatSize(file.size)
-    : formatSize(file.size);
-  fileSelected.style.display = 'flex';
-  uploadZone.style.display = 'none';
+  fichiers.push({ file: file, avant: avant });
+}
+
+function dessinerFichiers(){
+  var zone = document.getElementById('fileList');
+  zone.textContent = '';
+
+  fichiers.forEach(function(item, i){
+    var l = document.createElement('div');
+    l.className = 'file-selected';
+
+    var nom = document.createElement('span');
+    nom.className = 'name';
+    nom.textContent = item.file.name;
+
+    var taille = document.createElement('span');
+    taille.className = 'size';
+    taille.textContent = item.avant
+      ? formatSize(item.avant) + ' \u2192 ' + formatSize(item.file.size)
+      : formatSize(item.file.size);
+
+    var retirer = document.createElement('button');
+    retirer.type = 'button';
+    retirer.className = 'remove';
+    retirer.textContent = 'Retirer';
+    retirer.addEventListener('click', function(){
+      fichiers.splice(i, 1);
+      dessinerFichiers();
+      clearError();
+    });
+
+    l.appendChild(document.createTextNode('📄'));
+    l.appendChild(nom); l.appendChild(taille); l.appendChild(retirer);
+    zone.appendChild(l);
+  });
+
+  // La zone de dépôt reste visible tant qu'on peut encore ajouter.
+  uploadZone.style.display = fichiers.length >= MAX_FICHIERS ? 'none' : 'block';
 }
 
 uploadZone.addEventListener('click', function(){ fileInput.click(); });
@@ -411,18 +450,10 @@ uploadZone.addEventListener('dragleave', function(){ uploadZone.classList.remove
 uploadZone.addEventListener('drop', function(e){
   e.preventDefault();
   uploadZone.classList.remove('dragover');
-  if(e.dataTransfer.files.length){
-    fileInput.files = e.dataTransfer.files;
-    handleFile(e.dataTransfer.files[0]);
-  }
+  if(e.dataTransfer.files.length) ajouterFichiers(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', function(){
-  if(fileInput.files.length) handleFile(fileInput.files[0]);
-});
-document.getElementById('removeFile').addEventListener('click', function(e){
-  e.stopPropagation();
-  resetFile();
-  clearError();
+  if(fileInput.files.length) ajouterFichiers(fileInput.files);
 });
 
 /* ------------------------------------------------------------- transport */
@@ -450,15 +481,18 @@ function postJson(url, corps){
 
 /* XHR plutôt que fetch : c'est le seul moyen d'afficher une progression
    d'envoi, et 12 Mo sur le réseau d'un atelier, ça se voit passer. */
-function televerser(url, file){
+function televerser(url, file, index, total){
   return new Promise(function(resolve, reject){
     var xhr = new XMLHttpRequest();
     xhr.open('PUT', url, true);
     xhr.setRequestHeader('content-type', typeDeclare(file));
     xhr.upload.onprogress = function(e){
       if(e.lengthComputable){
-        var pct = Math.round(e.loaded / e.total * 92);
-        setProgress(pct, 'Envoi de votre bilan… ' + pct + ' %');
+        var part = e.loaded / e.total;
+        var pct = Math.round(((index + part) / total) * 92);
+        setProgress(pct, total > 1
+          ? 'Envoi du document ' + (index + 1) + ' sur ' + total + '… ' + pct + ' %'
+          : 'Envoi de votre document… ' + pct + ' %');
       }
     };
     xhr.onload = function(){
@@ -472,6 +506,18 @@ function televerser(url, file){
 }
 
 /* ---------------------------------------------------------------- envoi */
+
+/** Téléverse un fichier et renvoie sa référence signée. */
+function envoyerUn(item, index, total){
+  var file = item.file;
+  return postJson(API + '/upload-url', { taille: file.size, type: typeDeclare(file) })
+    .then(function(r){
+      if(!r.ok) throw { message: r.data.erreur };
+      return televerser(r.data.url, file, index, total).then(function(){
+        return { chemin: r.data.chemin, signature: r.data.signature, nom: file.name };
+      });
+    });
+}
 
 form.addEventListener('submit', function(e){
   e.preventDefault();                       // aucun envoi natif, jamais
@@ -490,13 +536,7 @@ form.addEventListener('submit', function(e){
     function(i){ return i.value; }
   );
   if(interets.length === 0){
-    showError('Sélectionnez au moins un centre d’intérêt.');
-    return;
-  }
-
-  var file = fichierPret;                   // le bilan est FACULTATIF
-  if(file && file.size > MAX_OCTETS){
-    showError('Le fichier dépasse 50 Mo.');
+    showError('Sélectionnez au moins un centre d\u2019intérêt.');
     return;
   }
 
@@ -509,27 +549,30 @@ form.addEventListener('submit', function(e){
     interet:        interets,
     commercial:     document.getElementById('commercial').value,
     'bot-field':    document.getElementById('botField').value,
-    remplissage_ms: Date.now() - ouvertureLe
+    remplissage_ms: Date.now() - ouvertureLe,
+    pieces:         []
   };
 
   verrouiller(true, 'Envoi en cours…');
-  setProgress(file ? 2 : 40, file ? 'Préparation de l’envoi…' : 'Envoi de vos informations…');
+  setProgress(fichiers.length ? 2 : 40,
+    fichiers.length ? 'Préparation de l\u2019envoi…' : 'Envoi de vos informations…');
 
-  var etape = file
-    ? postJson(API + '/upload-url', { taille: file.size, type: typeDeclare(file) })
-        .then(function(r){
-          if(!r.ok) throw { message: r.data.erreur };
-          return televerser(r.data.url, file).then(function(){
-            setProgress(95, 'Enregistrement…');
-            donnees.bilan_chemin    = r.data.chemin;
-            donnees.bilan_signature = r.data.signature;
-            donnees.bilan_nom       = file.name;
-          });
-        })
-    : Promise.resolve();
+  // Les documents partent l'un après l'autre : en série, la barre de
+  // progression reste lisible et le réseau d'un atelier ne sature pas.
+  var chaine = Promise.resolve();
+  fichiers.forEach(function(item, i){
+    chaine = chaine.then(function(){
+      return envoyerUn(item, i, fichiers.length).then(function(ref){
+        donnees.pieces.push(ref);
+      });
+    });
+  });
 
-  etape
-    .then(function(){ return postJson(API, donnees); })
+  chaine
+    .then(function(){
+      if(fichiers.length) setProgress(95, 'Enregistrement…');
+      return postJson(API, donnees);
+    })
     .then(function(r){
       // §5.5 : l'écran de succès ne s'affiche QUE sur confirmation serveur.
       if(r.ok && r.data && r.data.ok){
@@ -546,11 +589,12 @@ form.addEventListener('submit', function(e){
       // Dans tous les cas la saisie reste à l'écran : rien n'est perdu.
       showError(
         (err && err.message) ||
-        'Vos informations n’ont pas pu être envoyées — connexion interrompue. ' +
-        'Rien n’est perdu : vérifiez votre réseau et appuyez à nouveau sur Envoyer.'
+        'Vos informations n\u2019ont pas pu être envoyées — connexion interrompue. ' +
+        'Rien n\u2019est perdu : vérifiez votre réseau et appuyez à nouveau sur Envoyer.'
       );
     });
 });
+
 </script>
 
 </body>

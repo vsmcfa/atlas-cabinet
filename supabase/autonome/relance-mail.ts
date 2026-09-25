@@ -176,18 +176,10 @@ async function limiteDebitDepassee(
 
 // Envoi de la notification de lead via l'API transactionnelle Brevo.
 
-// Le bilan n'est PAS mis en pièce jointe : il est hébergé sur Supabase Storage
-// (bucket privé) et le mail porte une URL signée à durée limitée. Conséquences
-// voulues : aucune limite de taille côté Brevo, et le fichier ne se duplique pas
-// dans des boîtes mail que l'on ne maîtrise pas.
-// Basculer MAIL_MODE_BILAN=piece_jointe pour revenir à la pièce jointe réelle
-// (Brevo plafonne alors aux alentours de 10 Mo).
-const MODE_PJ = (Deno.env.get("MAIL_MODE_BILAN") ?? "lien") === "piece_jointe";
-const PJ_MAX = Number(Deno.env.get("MAIL_PJ_MAX_OCTETS") ?? 9 * 1024 * 1024);
-// Les bilans sont conservés indéfiniment (décision dirigeant) : le lien du mail
-// doit rester utile longtemps. Le fichier, lui, reste dans Supabase même après
-// expiration du lien — on le retrouve alors par sa référence.
-const LIEN_JOURS = Number(Deno.env.get("LIEN_BILAN_JOURS") ?? 365);
+// Les documents ne sont pas mis en pièce jointe : ils vivent dans le bucket
+// privé et se consultent depuis la fiche. Aucune limite de taille imposée par
+// Brevo, et aucun bilan comptable dupliqué dans des boîtes mail qu'on ne
+// maîtrise pas.
 
 // Console de consultation. Le mail ne déroule plus les réponses : il annonce,
 // et renvoie vers la fiche. Moins de données personnelles recopiées dans des
@@ -212,25 +204,14 @@ type Lead = {
   salaries: number;
   interets: string[];
   bilan_fourni: boolean;
-  bilan_chemin: string | null;
-  bilan_nom_origine: string | null;
-  bilan_taille: number | null;
-  bilan_type: string | null;
+  nb_pieces: number;
+  pieces: string[];            // noms des documents rattachés
   commercial: string | null;
   created_at: string;
 };
 
 const echapper = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-function base64(octets: Uint8Array): string {
-  let bin = "";
-  const pas = 0x8000;
-  for (let i = 0; i < octets.length; i += pas) {
-    bin += String.fromCharCode(...octets.subarray(i, i + pas));
-  }
-  return btoa(bin);
-}
 
 const encadre = (couleur: string, texte: string) =>
   `<p style="background:${couleur};border-radius:10px;padding:12px 14px;font-size:14px;color:#202B3D;margin:0;line-height:1.6">${texte}</p>`;
@@ -284,34 +265,13 @@ async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<{ piece
 
   const lien = CONSOLE_URL ? `${CONSOLE_URL}/?r=${await jetonLead(l.id)}` : "";
 
-  const pieces: { content: string; name: string }[] = [];
-  let bilanHtml: string;
-  let pieceJointe = false;
-
-  if (!l.bilan_fourni || !l.bilan_chemin) {
+  const noms = l.pieces ?? [];
+  const bilanHtml = noms.length === 0
     // §7 du brief : l'absence doit être dite explicitement, et seulement dite.
-    bilanHtml = encadre("#FBEAE8", "<b>Aucun bilan joint.</b>");
-  } else {
-    const nom = l.bilan_nom_origine ?? `bilan-${l.reference}`;
-
-    if (MODE_PJ && (l.bilan_taille ?? 0) <= PJ_MAX) {
-      const { data, error } = await sb.storage.from(BUCKET).download(l.bilan_chemin);
-      if (error || !data) throw new Error(`lecture du bilan impossible : ${error?.message}`);
-      pieces.push({ content: base64(new Uint8Array(await data.arrayBuffer())), name: nom });
-      pieceJointe = true;
-      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}, en pièce jointe.`);
-    } else if (CONSOLE_URL) {
-      // Le téléchargement se fait dans la console : pas d'URL de fichier
-      // comptable qui traîne un an dans des boîtes mail.
-      bilanHtml = encadre("#E7F7F0", `<b>Bilan joint</b> — ${echapper(nom)}.`);
-    } else {
-      const { data, error } = await sb.storage.from(BUCKET)
-        .createSignedUrl(l.bilan_chemin, LIEN_JOURS * 86400, { download: nom });
-      if (error || !data) throw new Error(`URL signée impossible : ${error?.message}`);
-      bilanHtml = encadre("#E7F7F0",
-        `<b>Bilan joint</b> — ${echapper(nom)}<br><a href="${data.signedUrl}" style="color:#2A5FBF;font-weight:700">Télécharger le bilan</a>`);
-    }
-  }
+    ? encadre("#FBEAE8", "<b>Aucun document joint.</b>")
+    : encadre("#E7F7F0",
+        `<b>${noms.length} document${noms.length > 1 ? "s" : ""} joint${noms.length > 1 ? "s" : ""}</b><br>` +
+        noms.map((n) => echapper(n)).join("<br>"));
 
   const reponse = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -325,14 +285,13 @@ async function envoyerNotification(sb: SupabaseClient, l: Lead): Promise<{ piece
       subject: `ATLAS Cabinet — Nouvelle réponse de ${l.garage}`,
       htmlContent: corpsHtml(l, bilanHtml, lien),
       tags: ["atlas-lead"],
-      ...(pieces.length ? { attachment: pieces } : {}),
     }),
   });
 
   if (!reponse.ok) {
     throw new Error(`Brevo ${reponse.status} : ${(await reponse.text()).slice(0, 500)}`);
   }
-  return { pieceJointe };
+  return { pieceJointe: noms.length > 0 };
 }
 
 // File de reprise : réessaie les notifications qui ont échoué.

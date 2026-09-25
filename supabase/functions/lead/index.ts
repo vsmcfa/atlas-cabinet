@@ -5,24 +5,17 @@
 // directement au Storage avec une URL signée à usage unique. Aucune limite de
 // taille imposée par la fonction, et un PDF de 12 Mo passe sans difficulté.
 
-import {
-  admin, alerter, BUCKET, cors, detecterType, ipDe, json,
-  journaliserRejet, limiteDebitDepassee, signatureValide, signer, TYPES_ACCEPTES, type TypeAccepte,
-} from "../_partage/commun.ts";
+import { admin, alerter, cors, ipDe, json, journaliserRejet, limiteDebitDepassee } from "../_partage/commun.ts";
+import { enregistrerPiece, urlUpload } from "../_partage/pieces.ts";
 import { envoyerNotification, type Lead } from "../_partage/mail.ts";
 
-const TAILLE_MAX = 50 * 1024 * 1024;   // §6 du brief, relevé : les images sont
-                                       // compressées côté navigateur, les PDF non.
 const REMPLISSAGE_MIN_MS = 3000;       // §6 : rejet sous 3 secondes
+const MAX_PIECES = 10;
 const MAX_UPLOADS_10MIN = 20;
 const MAX_ENVOIS_10MIN = 8;
 
 const texte = (v: unknown, max: number) =>
   typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "";
-
-/** Le nom d'origine n'est jamais réutilisé comme chemin : seulement conservé pour l'affichage. */
-const assainirNom = (nom: string) =>
-  nom.normalize("NFKD").replace(/[^\w.\- ]+/g, "_").replace(/_{2,}/g, "_").slice(0, 120) || "bilan";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
@@ -30,7 +23,7 @@ Deno.serve(async (req) => {
 
   const etape = new URL(req.url).pathname.endsWith("/upload-url") ? "upload-url" : "lead";
   try {
-    return etape === "upload-url" ? await urlUpload(req) : await enregistrer(req);
+    return etape === "upload-url" ? await demanderUrlUpload(req) : await enregistrer(req);
   } catch (e) {
     console.error(`[${etape}] exception`, e);
     return json(req, { erreur: "Une erreur est survenue côté serveur. Réessayez dans un instant." }, 500);
@@ -39,7 +32,7 @@ Deno.serve(async (req) => {
 
 /* ------------------------------------------------ étape 1 : URL d'upload */
 
-async function urlUpload(req: Request): Promise<Response> {
+async function demanderUrlUpload(req: Request): Promise<Response> {
   const sb = admin();
   const corps = await req.json().catch(() => null);
   if (!corps) return json(req, { erreur: "Requête illisible." }, 400);
@@ -49,34 +42,12 @@ async function urlUpload(req: Request): Promise<Response> {
     return json(req, { erreur: "Trop de tentatives. Patientez quelques minutes." }, 429);
   }
 
-  const taille = Number(corps.taille);
-  if (!Number.isFinite(taille) || taille <= 0 || taille > TAILLE_MAX) {
-    await journaliserRejet(sb, "taille", `taille annoncée ${taille}`, req, corps);
-    return json(req, { erreur: `Le fichier dépasse ${TAILLE_MAX / 1048576} Mo.` }, 413);
+  const r = await urlUpload(corps.taille, corps.type);
+  if (!r.ok) {
+    await journaliserRejet(sb, "type_fichier", r.motif, req, corps);
+    return json(req, { erreur: r.erreur }, r.code);
   }
-
-  const type = String(corps.type ?? "") as TypeAccepte;
-  const extension = TYPES_ACCEPTES[type];
-  if (!extension) {
-    await journaliserRejet(sb, "type_fichier", `type annoncé « ${corps.type} »`, req, corps);
-    return json(req, { erreur: "Format non accepté. Envoyez un PDF ou une photo (JPEG, PNG, HEIC)." }, 415);
-  }
-
-  const maintenant = new Date();
-  const chemin = `${maintenant.getUTCFullYear()}/${String(maintenant.getUTCMonth() + 1).padStart(2, "0")}/` +
-    `${crypto.randomUUID()}${extension}`;
-
-  const { data, error } = await sb.storage.from(BUCKET).createSignedUploadUrl(chemin);
-  if (error || !data) {
-    console.error("createSignedUploadUrl", error);
-    return json(req, { erreur: "Envoi de fichier indisponible. Réessayez dans un instant." }, 502);
-  }
-
-  return json(req, {
-    chemin,
-    url: data.signedUrl,               // URL absolue, valable 2 h, un seul objet
-    signature: await signer(chemin),   // réinjectée à l'étape 2, empêche d'associer un objet tiers
-  });
+  return json(req, { chemin: r.chemin, url: r.url, signature: r.signature });
 }
 
 /* ------------------------------------------- étape 2 : enregistrer le lead */
@@ -124,47 +95,13 @@ async function enregistrer(req: Request): Promise<Response> {
     return json(req, { erreur: `Il manque ${manques.join(", ")}.` }, 400);
   }
 
-  // --- bilan : facultatif (§7), mais vérifié pour de vrai s'il est là ------
-  let bilan = {
-    fourni: false,
-    chemin: null as string | null,
-    nom: null as string | null,
-    taille: null as number | null,
-    type: null as string | null,
-  };
+  // --- les documents sont FACULTATIFS (§7), et il peut y en avoir plusieurs --
+  const annonces = Array.isArray(c.pieces) ? c.pieces.slice(0, MAX_PIECES) : [];
 
-  if (c.bilan_chemin) {
-    const chemin = String(c.bilan_chemin);
-    if (!await signatureValide(chemin, String(c.bilan_signature ?? ""))) {
-      await journaliserRejet(sb, "type_fichier", `signature de chemin invalide (${chemin})`, req, c);
-      return json(req, { erreur: "Le fichier joint n'a pas pu être vérifié. Retirez-le et réessayez." }, 400);
-    }
-
-    const verif = await verifierObjet(chemin);
-    if (!verif.ok) {
-      await sb.storage.from(BUCKET).remove([chemin]);            // on ne garde pas un fichier refusé
-      await journaliserRejet(sb, "type_fichier", verif.motif, req, c);
-      return json(req, { erreur: verif.message }, 415);
-    }
-
-    bilan = {
-      fourni: true,
-      chemin,
-      nom: assainirNom(texte(c.bilan_nom, 160) || `bilan${chemin.slice(chemin.lastIndexOf("."))}`),
-      taille: verif.taille,
-      type: verif.type,
-    };
-  }
-
-  // --- écriture en base AVANT toute réponse. §5.5 : le succès ne s'affiche
-  //     qu'après confirmation que c'est écrit. ------------------------------
+  // Le lead est écrit AVANT les pièces : si une pièce est rejetée, la réponse
+  // du dirigeant reste acquise. §5.5 — rien ne se perd en silence.
   const { data: lead, error } = await sb.from("leads").insert({
     garage, dirigeant, telephone, email, salaries, interets,
-    bilan_fourni: bilan.fourni,
-    bilan_chemin: bilan.chemin,
-    bilan_nom_origine: bilan.nom,
-    bilan_taille: bilan.taille,
-    bilan_type: bilan.type,
     commercial: texte(c.commercial, 100) || null,
     ip: ipDe(req),
     user_agent: req.headers.get("user-agent")?.slice(0, 400) ?? null,
@@ -177,9 +114,32 @@ async function enregistrer(req: Request): Promise<Response> {
     return json(req, { erreur: "Vos informations n'ont pas pu être enregistrées. Réessayez dans un instant." }, 500);
   }
 
+  const refusees: string[] = [];
+  for (const p of annonces) {
+    const r = await enregistrerPiece(
+      lead.id, String(p?.chemin ?? ""), String(p?.signature ?? ""), p?.nom, "formulaire",
+    );
+    if (!r.ok) {
+      refusees.push(String(p?.nom ?? "document"));
+      await journaliserRejet(sb, "type_fichier", `${r.motif} (lead ${lead.reference})`, req, p);
+    }
+  }
+  if (refusees.length) {
+    await alerter(sb, "avertissement",
+      `Document refusé — lead ${lead.reference} (${garage})`,
+      `Non enregistré(s) : ${refusees.join(", ")}. La réponse, elle, est bien conservée.`, lead.id);
+  }
+
+  // Le compteur est tenu par un déclencheur : on relit la ligne pour que le
+  // mail sache ce qui a réellement été rattaché.
+  const { data: complet } = await sb.from("leads").select("*").eq("id", lead.id).single();
+  const { data: pieces } = await sb.from("pieces_jointes")
+    .select("nom").eq("lead_id", lead.id).order("created_at");
+
   // --- notification. Un échec ici ne perd plus rien : la ligne existe. -----
   try {
-    const { pieceJointe } = await envoyerNotification(sb, lead as Lead);
+    const { pieceJointe } = await envoyerNotification(
+      sb, { ...(complet ?? lead), pieces: (pieces ?? []).map((p) => p.nom) } as Lead);
     await sb.from("leads").update({
       mail_statut: "envoye",
       mail_tentatives: 1,
@@ -196,55 +156,4 @@ async function enregistrer(req: Request): Promise<Response> {
   }
 
   return json(req, { ok: true, id: lead.id, reference: lead.reference });
-}
-
-/* ------------------------------ vérification du type réel par les octets */
-
-async function verifierObjet(chemin: string): Promise<
-  { ok: true; taille: number; type: string } | { ok: false; motif: string; message: string }
-> {
-  const sb = admin();
-
-  // Une URL signée courte, puis UNE requête Range : on obtient d'un coup
-  // l'existence, la taille réelle et les octets d'en-tête. On passe par l'URL
-  // signée plutôt que par l'API authentifiée en direct, car c'est le chemin de
-  // lecture que le Storage sert de façon identique partout.
-  const { data: signee, error: eSign } = await sb.storage.from(BUCKET).createSignedUrl(chemin, 60);
-  if (eSign || !signee) {
-    return {
-      ok: false,
-      motif: `objet introuvable dans le Storage : ${eSign?.message ?? "sans détail"}`,
-      message: "Le fichier n'est pas arrivé jusqu'à nous. Retirez-le et réessayez.",
-    };
-  }
-
-  const r = await fetch(signee.signedUrl, { headers: { range: "bytes=0-63" } });
-  if (!r.ok && r.status !== 206) {
-    return {
-      ok: false,
-      motif: `lecture impossible (HTTP ${r.status})`,
-      message: "Le fichier n'a pas pu être lu. Retirez-le et réessayez.",
-    };
-  }
-
-  const entete = new Uint8Array(await r.arrayBuffer());
-  const contentRange = r.headers.get("content-range");            // « bytes 0-63/12345678 »
-  const taille = Number(contentRange?.split("/")[1] ?? r.headers.get("content-length") ?? 0);
-
-  if (!Number.isFinite(taille) || taille <= 0) {
-    return { ok: false, motif: "taille réelle indéterminable", message: "Le fichier semble vide. Retirez-le et réessayez." };
-  }
-  if (taille > TAILLE_MAX) {
-    return { ok: false, motif: `taille réelle ${taille}`, message: `Le fichier dépasse ${TAILLE_MAX / 1048576} Mo.` };
-  }
-
-  const type = detecterType(entete);
-  if (!type) {
-    return {
-      ok: false,
-      motif: `signature inconnue : ${[...entete.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join(" ")}`,
-      message: "Ce fichier n'est pas un PDF ni une image. Envoyez un PDF ou une photo de votre bilan.",
-    };
-  }
-  return { ok: true, taille, type };
 }

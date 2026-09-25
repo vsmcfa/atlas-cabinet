@@ -151,7 +151,7 @@ function dessiner(d){
     tr.appendChild(cell(l.garage));
     tr.appendChild(cell(l.dirigeant, 'opt'));
     tr.appendChild(cell(l.telephone, 'opt nowrap'));
-    tr.appendChild(l.bilan_fourni ? tag('joint', 'ok') : tag('aucun', 'no'));
+    tr.appendChild(l.nb_pieces > 0 ? tag(String(l.nb_pieces), 'ok') : tag('aucun', 'no'));
     tr.appendChild(cell(l.commercial || '—', 'opt muted'));
     tr.appendChild(
       l.mail_statut === 'envoye' ? tag('parti', 'ok')
@@ -211,29 +211,10 @@ function detail(l){
   });
   p.appendChild(ul);
 
-  var h3b = document.createElement('h3'); h3b.textContent = 'BILAN COMPTABLE'; p.appendChild(h3b);
-  if(l.bilan_fourni){
-    var box = document.createElement('div'); box.className = 'box ok';
-    var nom = document.createElement('div');
-    nom.textContent = l.bilan_nom_origine || 'bilan';
-    box.appendChild(nom);
-    var dl2 = document.createElement('button');
-    dl2.className = 'btn small'; dl2.textContent = 'Télécharger';
-    dl2.style.marginTop = '10px';
-    dl2.addEventListener('click', function(){
-      dl2.disabled = true; dl2.textContent = 'Préparation…';
-      appel('bilan', { jeton: etat.jeton, jeton_lead: etat.jetonLead, id: l.id })
-        .then(function(d){ window.location.href = d.url; })
-        .catch(function(ex){ if(!(ex && ex.silencieux)) alert((ex && ex.message) || 'Téléchargement impossible.'); })
-        .finally(function(){ dl2.disabled = false; dl2.textContent = 'Télécharger'; });
-    });
-    box.appendChild(dl2);
-    p.appendChild(box);
-  } else {
-    var no = document.createElement('div'); no.className = 'box no';
-    no.textContent = 'Aucun bilan joint.';
-    p.appendChild(no);
-  }
+  var h3b = document.createElement('h3'); h3b.textContent = 'DOCUMENTS'; p.appendChild(h3b);
+  var zonePieces = document.createElement('div');
+  p.appendChild(zonePieces);
+  dessinerPieces(zonePieces, l);
 
   if(l.mail_statut !== 'envoye'){
     var w = document.createElement('div');
@@ -254,6 +235,189 @@ function detail(l){
   $('overlay').style.display = 'block';
   p.style.display = 'block';
 }
+
+/* ------------------------------------------------------ pièces jointes */
+
+function mo(octets){
+  return octets < 1048576
+    ? Math.round(octets / 1024) + ' Ko'
+    : (octets / 1048576).toFixed(1).replace('.', ',') + ' Mo';
+}
+
+function dessinerPieces(zone, l){
+  zone.textContent = '';
+  var pieces = l.pieces_jointes || [];
+
+  if(!pieces.length){
+    var vide = document.createElement('div');
+    vide.className = 'box no';
+    vide.textContent = 'Aucun document joint.';
+    zone.appendChild(vide);
+  }
+
+  pieces.forEach(function(pc){
+    var ligne = document.createElement('div');
+    ligne.className = 'piece';
+
+    var nom = document.createElement('span');
+    nom.className = 'p-nom';
+    nom.textContent = pc.nom;
+
+    var meta = document.createElement('span');
+    meta.className = 'p-meta';
+    meta.textContent = mo(pc.taille) + (pc.origine === 'console' ? ' · ajouté' : '');
+
+    var voir = document.createElement('button');
+    voir.className = 'p-act p-voir';
+    voir.textContent = 'Télécharger';
+    voir.addEventListener('click', function(){
+      voir.disabled = true; voir.textContent = '…';
+      appel('bilan', { jeton: etat.jeton, jeton_lead: etat.jetonLead, lead_id: l.id, piece_id: pc.id })
+        .then(function(d){ window.location.href = d.url; })
+        .catch(function(ex){ if(!(ex && ex.silencieux)) alert((ex && ex.message) || 'Téléchargement impossible.'); })
+        .finally(function(){ voir.disabled = false; voir.textContent = 'Télécharger'; });
+    });
+    ligne.appendChild(nom); ligne.appendChild(meta); ligne.appendChild(voir);
+
+    // La suppression est définitive : elle passe par une confirmation, et
+    // n'est pas offerte à qui arrive par un simple lien de mail.
+    if(etat.jeton){
+      var suppr = document.createElement('button');
+      suppr.className = 'p-act p-suppr';
+      suppr.textContent = 'Supprimer';
+      suppr.addEventListener('click', function(){
+        confirmer(pc.nom, function(){
+          return appel('piece-supprimer', { jeton: etat.jeton, piece_id: pc.id }).then(function(){
+            l.pieces_jointes = pieces.filter(function(x){ return x.id !== pc.id; });
+            l.nb_pieces = l.pieces_jointes.length;
+            l.bilan_fourni = l.nb_pieces > 0;
+            dessinerPieces(zone, l);
+            charger();                       // la liste reflète le nouveau compte
+          });
+        });
+      });
+      ligne.appendChild(suppr);
+    }
+    zone.appendChild(ligne);
+  });
+
+  if(etat.jeton) zone.appendChild(zoneAjout(zone, l));
+}
+
+function zoneAjout(zone, l){
+  var bloc = document.createElement('div');
+  bloc.className = 'ajout';
+
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = 'application/pdf,image/*';
+
+  var bouton = document.createElement('button');
+  bouton.className = 'btn small';
+  bouton.textContent = 'Ajouter un document';
+  bouton.addEventListener('click', function(){ input.click(); });
+
+  var etatTxt = document.createElement('div');
+  etatTxt.className = 'muted';
+  etatTxt.style.marginTop = '8px';
+
+  input.addEventListener('change', function(){
+    var liste = [].slice.call(input.files);
+    if(!liste.length) return;
+    input.value = '';
+    bouton.disabled = true;
+
+    var i = 0;
+    var suite = Promise.resolve();
+    liste.forEach(function(file){
+      suite = suite.then(function(){
+        i++;
+        etatTxt.textContent = 'Envoi de ' + file.name + ' (' + i + '/' + liste.length + ')\u2026';
+        return televerserPiece(l, file).then(function(pc){
+          (l.pieces_jointes = l.pieces_jointes || []).push(pc);
+        }).catch(function(ex){
+          if(!(ex && ex.silencieux)) alert('« ' + file.name + ' » : ' + ((ex && ex.message) || 'envoi impossible.'));
+        });
+      });
+    });
+    suite.then(function(){
+      bouton.disabled = false;
+      etatTxt.textContent = '';
+      l.nb_pieces = (l.pieces_jointes || []).length;
+      l.bilan_fourni = l.nb_pieces > 0;
+      dessinerPieces(zone, l);
+      charger();
+    });
+  });
+
+  bloc.appendChild(bouton); bloc.appendChild(input); bloc.appendChild(etatTxt);
+  return bloc;
+}
+
+/* Même chemin en deux temps que le formulaire public : le fichier va
+   directement au stockage, la fonction ne fait que vérifier et rattacher. */
+function televerserPiece(l, file){
+  return appel('piece-url', { jeton: etat.jeton, taille: file.size, type: typeDeclare(file) })
+    .then(function(d){
+      return new Promise(function(resolve, reject){
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', d.url, true);
+        xhr.setRequestHeader('content-type', typeDeclare(file));
+        xhr.onload = function(){
+          (xhr.status >= 200 && xhr.status < 300) ? resolve(d) : reject({ message: 'Envoi refusé par le stockage.' });
+        };
+        xhr.onerror = function(){ reject({ message: 'Connexion interrompue.' }); };
+        xhr.send(file);
+      });
+    })
+    .then(function(d){
+      return appel('piece-ajouter', {
+        jeton: etat.jeton, lead_id: l.id,
+        chemin: d.chemin, signature: d.signature, nom: file.name
+      });
+    })
+    .then(function(r){ return r.piece; });
+}
+
+/* Android renvoie parfois un type MIME vide : on le déduit de l'extension.
+   La vérification par les octets, côté serveur, reste seule maîtresse. */
+function typeDeclare(file){
+  if(file.type) return file.type;
+  var table = { pdf:'application/pdf', jpg:'image/jpeg', jpeg:'image/jpeg',
+                png:'image/png', heic:'image/heic', heif:'image/heic' };
+  return table[(file.name.split('.').pop() || '').toLowerCase()] || 'application/pdf';
+}
+
+/* ------------------------------------------------ boîte de confirmation */
+
+var confirmerAction = null;
+
+function confirmer(cible, action){
+  confirmerAction = action;
+  $('modalCible').textContent = cible;
+  $('modal').classList.add('on');
+  $('modalAnnuler').focus();
+}
+function fermerModal(){
+  $('modal').classList.remove('on');
+  confirmerAction = null;
+  $('modalConfirmer').disabled = false;
+  $('modalConfirmer').textContent = 'Supprimer définitivement';
+}
+$('modalAnnuler').addEventListener('click', fermerModal);
+$('modal').addEventListener('click', function(e){ if(e.target === $('modal')) fermerModal(); });
+$('modalConfirmer').addEventListener('click', function(){
+  if(!confirmerAction) return;
+  $('modalConfirmer').disabled = true;
+  $('modalConfirmer').textContent = 'Suppression\u2026';
+  confirmerAction()
+    .then(fermerModal)
+    .catch(function(ex){
+      fermerModal();
+      if(!(ex && ex.silencieux)) alert((ex && ex.message) || 'Suppression impossible.');
+    });
+});
 
 /* ---------------------------------------------------------- fiche PDF */
 
@@ -299,10 +463,15 @@ function imprimer(l){
   (l.interets || []).forEach(function(i){ ajout(ul, 'li', i); });
   f.appendChild(ul);
 
-  ajout(f, 'h2', 'Bilan comptable');
-  ajout(f, 'div', l.bilan_fourni
-    ? 'Bilan joint — ' + (l.bilan_nom_origine || 'document')
-    : 'Aucun bilan joint.', 'f-bilan');
+  ajout(f, 'h2', 'Documents');
+  var pcs = l.pieces_jointes || [];
+  if(pcs.length){
+    var ulp = document.createElement('ul');
+    pcs.forEach(function(pc){ ajout(ulp, 'li', pc.nom); });
+    f.appendChild(ulp);
+  } else {
+    ajout(f, 'div', 'Aucun document joint.', 'f-bilan');
+  }
 
   ajout(f, 'div', 'Document interne VSM — coordonnées de dirigeant et données comptables. ' +
     'Édité le ' + dateLongue(new Date().toISOString()) + '.', 'f-pied');
@@ -324,7 +493,10 @@ function fermerPanneau(){
   if(etat.jetonLead && !etat.jeton) deconnecter(null);
 }
 $('overlay').addEventListener('click', fermerPanneau);
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') fermerPanneau(); });
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Escape') return;
+  if($('modal').classList.contains('on')) fermerModal(); else fermerPanneau();
+});
 
 /* ----------------------------------------------------- recherche, pages */
 
